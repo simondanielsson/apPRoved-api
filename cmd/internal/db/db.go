@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/simondanielsson/apPRoved/cmd/config"
+	"github.com/simondanielsson/apPRoved/cmd/internal/middlewares"
 	"github.com/simondanielsson/apPRoved/cmd/internal/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -28,4 +30,12 @@ func NewDB(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 
 	log.Print("connected to database\n")
 	return db, nil
+}
+
+func GetDBTransaction(c *fiber.Ctx) *gorm.DB {
+	tx, ok := c.Locals(string(middlewares.TxnKey)).(*gorm.DB)
+	if !ok {
+		panic("no transaction found in context, did you forget to wrap the route in a transaction middleware?")
+	}
+	return tx
 }

@@ -24,10 +24,14 @@ func (r *ReviewsRepository) GetRepositories(userID uint) ([]string, error) {
 	return repositoryNames, nil
 }
 
-func (r *ReviewsRepository) CreateRepository(repo *models.Repository) (uint, error) {
+func (r *ReviewsRepository) CreateRepository(repo *models.Repository) (*models.Repository, error) {
 	if err := r.db.Create(repo).Error; err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return repo.ID, nil
+	return repo, nil
+}
+
+func (r *ReviewsRepository) CreatePullRequests(prs []*models.PullRequest) error {
+	return r.db.CreateInBatches(prs, 30).Error
 }

@@ -293,6 +293,9 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "owner": {
+                    "type": "string"
+                },
                 "url": {
                     "type": "string"
                 }

@@ -32,7 +32,8 @@ func (s *APIServer) setupRoutes() {
 	services := bootstrap.InitServices(repos)
 	controllers := bootstrap.InitControllers(services)
 
-	routes.RegisterRoutes(apiV1, controllers)
+	opt_middlewares := middlewares.GetOptionalMiddlewares(s.db)
+	routes.RegisterRoutes(apiV1, controllers, opt_middlewares)
 }
 
 func NewAPIServer(cfg *config.ServerConfig, db *gorm.DB) *APIServer {

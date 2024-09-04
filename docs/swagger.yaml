@@ -3,6 +3,8 @@ definitions:
     properties:
       name:
         type: string
+      owner:
+        type: string
       url:
         type: string
     type: object
