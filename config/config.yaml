@@ -1,0 +1,13 @@
+server:
+  bind_address: 8090
+  mode: development
+
+database:
+  # host: approved-db
+  # port: 5432
+  # user: approved
+  # password: secret
+  # dbname: approved
+
+jwt:
+  secret:

@@ -1,0 +1,11 @@
+run:
+  concurrency: 4
+  allow-parallel-runners: true
+
+# output:
+#   formats:
+#   - format: json
+#     path: stderr
+#   - format: checkstyle
+#     path: report.xml
+#   - format: colored-line-number
