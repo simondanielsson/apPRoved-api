@@ -1,0 +1,31 @@
+version: '3.9'
+
+services:
+  api:
+    image: approved-api:latest
+    container_name: approved-api
+    environment:
+      - APP_ENV=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8090:8090"
+
+  postgres:
+    image: postgres:16
+    container_name: approved-db
+    ports:
+      - "5434:5432"
+    env_file:
+      - .env.db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U approved"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
