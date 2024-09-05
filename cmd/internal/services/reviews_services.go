@@ -6,6 +6,7 @@ import (
 	"github.com/simondanielsson/apPRoved/cmd/internal/models"
 	"github.com/simondanielsson/apPRoved/cmd/internal/repositories"
 	"github.com/simondanielsson/apPRoved/pkg/utils"
+	"gorm.io/gorm"
 )
 
 type ReviewsService struct {
@@ -16,18 +17,18 @@ func NewReviewsService(reviewsRepository *repositories.ReviewsRepository) *Revie
 	return &ReviewsService{reviewsRepository: reviewsRepository}
 }
 
-func (rs *ReviewsService) GetRepositories(userID uint) ([]string, error) {
-	return rs.reviewsRepository.GetRepositories(userID)
+func (rs *ReviewsService) GetRepositories(tx *gorm.DB, userID uint) ([]string, error) {
+	return rs.reviewsRepository.GetRepositories(tx, userID)
 }
 
-func (rs *ReviewsService) RegisterRepository(ctx context.Context, userID uint, name, owner, url string) (uint, error) {
+func (rs *ReviewsService) RegisterRepository(ctx context.Context, tx *gorm.DB, userID uint, name, owner, url string) (uint, error) {
 	repo := &models.Repository{
 		UserID: userID,
 		Name:   name,
 		Owner:  owner,
 		URL:    url,
 	}
-	repo, err := rs.reviewsRepository.CreateRepository(repo)
+	repo, err := rs.reviewsRepository.CreateRepository(tx, repo)
 	if err != nil {
 		return 0, err
 	}
@@ -37,7 +38,7 @@ func (rs *ReviewsService) RegisterRepository(ctx context.Context, userID uint, n
 		return 0, err
 	}
 
-	if err := rs.reviewsRepository.CreatePullRequests(prs); err != nil {
+	if err := rs.reviewsRepository.CreatePullRequests(tx, prs); err != nil {
 		return 0, err
 	}
 	return repo.ID, nil

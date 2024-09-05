@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/simondanielsson/apPRoved/cmd/internal/db"
 	"github.com/simondanielsson/apPRoved/cmd/internal/dto/requests"
 	"github.com/simondanielsson/apPRoved/cmd/internal/services"
 )
@@ -28,9 +29,10 @@ func NewReviewsController(reviewsService *services.ReviewsService) *ReviewsContr
 // @Failure      500  {object}  map[string]interface{}
 // @Router       /api/v1/reviews/repositories [get]
 func (rc *ReviewsController) GetRepositories(c *fiber.Ctx) error {
+	tx := db.GetDBTransaction(c)
 	userID := c.Locals("userID").(uint)
 
-	repos, err := rc.reviewsService.GetRepositories(userID)
+	repos, err := rc.reviewsService.GetRepositories(tx, userID)
 	if err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"message": "No repositories found", "error": err.Error(),
@@ -54,6 +56,7 @@ func (rc *ReviewsController) GetRepositories(c *fiber.Ctx) error {
 // @Router       /api/v1/reviews/repositories [post]
 func (rc *ReviewsController) RegisterRepository(c *fiber.Ctx) error {
 	ctx := context.Background()
+	tx := db.GetDBTransaction(c)
 	userID := c.Locals("userID").(uint)
 
 	var req requests.CreateRepositoryRequest
@@ -61,7 +64,7 @@ func (rc *ReviewsController) RegisterRepository(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Could not parse request body"})
 	}
 
-	repoID, err := rc.reviewsService.RegisterRepository(ctx, userID, req.Name, req.Owner, req.URL)
+	repoID, err := rc.reviewsService.RegisterRepository(ctx, tx, userID, req.Name, req.Owner, req.URL)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not create repository", "error": err.Error()})
 	}
