@@ -1,13 +1,23 @@
 server:
-  bind_address: 8090
-  mode: development
+  bind_address:
+  mode:
 
 database:
-  # host: approved-db
-  # port: 5432
-  # user: approved
-  # password: secret
-  # dbname: approved
+  host:
+  port:
+  user:
+  password:
+  dbname:
 
 jwt:
   secret:
+
+mq:
+  url:
+  queues:
+    - name: review-file-diffs
+      durable: true
+      auto_delete: false
+      exclusive: false
+      no_wait: false
+      args:

@@ -7,6 +7,7 @@ import (
 	"github.com/simondanielsson/apPRoved/cmd/config"
 	"github.com/simondanielsson/apPRoved/cmd/internal/db"
 	"github.com/simondanielsson/apPRoved/pkg/utils"
+	"github.com/simondanielsson/apPRoved/pkg/utils/mq"
 )
 
 // @title apPRoved API
@@ -28,6 +29,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("could not connect to database %v\n", err)
 	}
+
+	if err := mq.InitRabbitMQ(config.MQ); err != nil {
+		log.Fatalf("could not connect to RabbitMQ")
+	}
+	defer mq.CloseRabbitMQ()
 
 	server := api.NewAPIServer(config.Server, db)
 	server.Run()

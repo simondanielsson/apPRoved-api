@@ -8,4 +8,5 @@ import (
 
 func RegisterAuthRoutes(apiV1 fiber.Router, authController *controllers.AuthController, opt_middlewares middlewares.OptionalMiddlewares) {
 	apiV1.Post("/login", opt_middlewares.Transaction, authController.Login)
+	apiV1.Post("/register", opt_middlewares.Transaction, authController.Register)
 }

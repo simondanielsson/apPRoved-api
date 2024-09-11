@@ -6,6 +6,7 @@ import (
 	"path"
 
 	"github.com/joho/godotenv"
+	amqp "github.com/rabbitmq/amqp091-go"
 	customerrors "github.com/simondanielsson/apPRoved/pkg/custom_errors"
 	"github.com/spf13/viper"
 )
@@ -23,12 +24,29 @@ type DatabaseConfig struct {
 	DBName   string `mapstructure:"dbname"`
 }
 
+type JWTConfig struct {
+	Secret string `mapstructure:"secret"`
+}
+
+type RabbitMQQueueConfig struct {
+	Name       string     `mapstructure:"name"`
+	Durable    bool       `mapstructure:"durable"`
+	AutoDelete bool       `mapstructure:"auto_delete"`
+	Exclusive  bool       `mapstructure:"exclusive"`
+	NoWait     bool       `mapstructure:"no_wait"`
+	Args       amqp.Table `mapstructure:"args"`
+}
+
+type RabbitMQConfig struct {
+	Url    string                `mapstructure:"url"`
+	Queues []RabbitMQQueueConfig `mapstructure:"queues"`
+}
+
 type Config struct {
 	Server   *ServerConfig   `mapstructure:"server"`
 	Database *DatabaseConfig `mapstructure:"database"`
-	JWT      struct {
-		Secret string `mapstructure:"secret"`
-	} `mapstructure:"jwt"`
+	JWT      *JWTConfig      `mapstructure:"jwt"`
+	MQ       *RabbitMQConfig `mapstructure:"mq"`
 }
 
 func LoadConfig() (*Config, error) {
@@ -47,14 +65,17 @@ func LoadConfig() (*Config, error) {
 	viper.SetConfigType("yaml")
 
 	viper.AutomaticEnv()
+	customerrors.IgnoreError(viper.BindEnv("server.mode", "APP_ENV"))
+	customerrors.IgnoreError(viper.BindEnv("server.bind_address", "APP_PORT"))
+	customerrors.IgnoreError(viper.BindEnv("database.user", "POSTGRES_USER"))
 	customerrors.IgnoreError(viper.BindEnv("database.user", "POSTGRES_USER"))
 	customerrors.IgnoreError(viper.BindEnv("database.password", "POSTGRES_PASSWORD"))
 	customerrors.IgnoreError(viper.BindEnv("database.host", "POSTGRES_HOST"))
 	customerrors.IgnoreError(viper.BindEnv("database.port", "POSTGRES_PORT"))
 	customerrors.IgnoreError(viper.BindEnv("database.dbname", "POSTGRES_DBNAME"))
 	customerrors.IgnoreError(viper.BindEnv("jwt.secret", "JWT_KEY"))
+	customerrors.IgnoreError(viper.BindEnv("mq.url", "AMQP_URL"))
 
-	// discover the config
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, err
 	}
@@ -69,6 +90,16 @@ func LoadConfig() (*Config, error) {
 	}
 	if cfg.Database == nil {
 		log.Fatalf("database config is missing")
+	}
+	if cfg.JWT == nil {
+		log.Fatalf("jwt config is missing")
+	}
+	if cfg.MQ == nil {
+		log.Fatalf("rabbitmq config is missing")
+	}
+
+	if err := ValidateRabbitMQConfig(cfg.MQ); err != nil {
+		log.Fatalf("configuration validation error: %v", err)
 	}
 
 	return &cfg, nil

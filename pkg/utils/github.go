@@ -6,57 +6,117 @@ import (
 	"os"
 
 	"github.com/google/go-github/v64/github"
+	"golang.org/x/oauth2"
 )
 
-var ghClient map[uint]*github.Client
-
-func initGithubClient(userID uint) *github.Client {
-	gh_token := os.Getenv("GITHUB_TOKEN")
-	ghClient[userID] = github.NewClient(nil).WithAuthToken(gh_token)
-	log.Printf("Initialized GitHub client for user %d", userID)
-	return ghClient[userID]
-}
-
-func getOrCreateGithubClient(userID uint) *github.Client {
-	client := ghClient[userID]
-	if client == nil {
-		log.Printf("GitHub client not initialized for user %d. Initializing.", userID)
-		client := initGithubClient(userID)
-		return client
+func initGithubClient(ctx context.Context, userID uint) *github.Client {
+	token := os.Getenv("GITHUB_TOKEN")
+	if token == "" {
+		log.Fatalf("GITHUB_TOKEN is not set")
 	}
+
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: token},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+	if tc == nil {
+		log.Fatalf("Failed to initialize OAuth2 client for user %d", userID)
+	}
+
+	client := github.NewClient(tc)
+	if client == nil {
+		log.Fatalf("Failed to initialize GitHub client for user %d", userID)
+	}
+
+	log.Printf("Initialized GitHub client for user %d", userID)
 	return client
 }
 
 type GithubPullRequest struct {
-	Number uint
-	Title  string
-	URL    string
+	Number     uint
+	Title      string
+	URL        string
+	State      string
+	LastCommit string
+}
+
+type GithubPullRequestFileChanges struct {
+	Filename  string `json:"filename"`
+	Patch     string `json:"patch"`
+	Additions int    `json:"additions"`
+	Deletions int    `json:"deletions"`
+	Changes   int    `json:"changes"`
 }
 
 func ListPullRequests(ctx context.Context, repoName, repoOwner string, userID uint) ([]*GithubPullRequest, error) {
-	client := getOrCreateGithubClient(userID)
-	fetched_prs, _, err := client.PullRequests.List(ctx, repoOwner, repoName, &github.PullRequestListOptions{
-		State: "open",
-	})
+	client := initGithubClient(ctx, userID)
+	log.Printf("Fetching PRs for %s/%s", repoOwner, repoName)
+	// fetch PR's by page
+	opts := &github.PullRequestListOptions{
+		State:       "all",
+		ListOptions: github.ListOptions{Page: 0, PerPage: 30},
+	}
+
+	var prs []*GithubPullRequest
+	for {
+		fetched_prs, resp, err := client.PullRequests.List(ctx, repoOwner, repoName, opts)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, pr := range fetched_prs {
+			number := *pr.Number
+			if number < 0 {
+				number = 0
+			}
+			uint_number := uint(number)
+
+			commits, _, err := client.PullRequests.ListCommits(ctx, repoOwner, repoName, *pr.Number, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			prs = append(prs, &GithubPullRequest{
+				Number:     uint_number,
+				Title:      *pr.Title,
+				URL:        *pr.URL,
+				State:      *pr.State,
+				LastCommit: *commits[len(commits)-1].SHA,
+			})
+			log.Printf("#%d %s (%s)\n", *pr.Number, *pr.Title, *pr.URL)
+		}
+
+		// If there are no more pages, break the loop (0 is the zero value for NextPage))
+		if resp.NextPage == 0 {
+			break
+		}
+
+		opts.Page = resp.NextPage
+	}
+
+	log.Printf("Fetched %d PRs for %s/%s", len(prs), repoOwner, repoName)
+	return prs, nil
+}
+
+func FetchFileDiffs(ctx context.Context, repoName, repoOwner string, prNumber uint, userID uint) ([]*GithubPullRequestFileChanges, error) {
+	client := initGithubClient(ctx, userID)
+
+	files, _, err := client.PullRequests.ListFiles(ctx, repoOwner, repoName, int(prNumber), nil)
 	if err != nil {
 		return nil, err
 	}
-	fetched_prs[0].GetURL()
 
-	prs := make([]*GithubPullRequest, len(fetched_prs))
-	for _, pr := range fetched_prs {
-		number := pr.GetNumber()
-		if number < 0 {
-			number = 0
+	var fc []*GithubPullRequestFileChanges
+	for _, file := range files {
+		diff := &GithubPullRequestFileChanges{
+			Filename:  *file.Filename,
+			Patch:     *file.Patch,
+			Additions: *file.Additions,
+			Deletions: *file.Deletions,
+			Changes:   *file.Changes,
 		}
-		uint_number := uint(number)
-
-		prs = append(prs, &GithubPullRequest{
-			Number: uint_number,
-			Title:  pr.GetURL(),
-			URL:    pr.GetTitle(),
-		})
+		fc = append(fc, diff)
 	}
 
-	return prs, nil
+	return fc, nil
 }

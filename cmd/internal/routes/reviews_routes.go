@@ -7,14 +7,17 @@ import (
 )
 
 func RegisterReviewsRoutes(apiV1 fiber.Router, reviewsController *controllers.ReviewsController, opt_middlewares middlewares.OptionalMiddlewares) {
-	router := apiV1.Group("/reviews", opt_middlewares.Auth, opt_middlewares.Transaction)
+	router := apiV1.Group("/repositories", opt_middlewares.Auth, opt_middlewares.Transaction)
 
-	router.Get("/repositories", reviewsController.GetRepositories)
-	router.Post("/repositories", reviewsController.RegisterRepository)
+	router.Get("", reviewsController.GetRepositories)
+	router.Post("", reviewsController.RegisterRepository)
 
-	// router.Get("/repositories/:repositoryID/pull-requests", reviewsController.GetPullRequests)
+	router.Get("/:repositoryID/pull-requests", reviewsController.GetPullRequests)
+	router.Put("/:repositoryID/pull-requests/:prID", reviewsController.UpdatePullRequest)
 
-	// router.Get("/repositories/:repositoryID/pull-requests/:prID/reviews", reviewsController.GetReviews)
-	// router.Get("/repositories/:repositoryID/pull-requests/:prID/reviews/:reviewID", reviewsController.GetReview)
-	// router.Post("/repositories/:repositoryID/pull-requests/:prID/reviews", reviewsController.CreateReview)
+	router.Get("/:repositoryID/pull-requests/:prID/reviews", reviewsController.GetReviews)
+	router.Get("/:repositoryID/pull-requests/:prID/reviews/:reviewID", reviewsController.GetReview)
+	router.Post("/:repositoryID/pull-requests/:prID/reviews", reviewsController.CreateReview)
+
+	apiV1.Post("/reviews/complete", opt_middlewares.Transaction, reviewsController.CompleteReview)
 }
