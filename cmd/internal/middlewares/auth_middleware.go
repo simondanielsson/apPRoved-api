@@ -1,6 +1,8 @@
 package middlewares
 
 import (
+	"log"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/simondanielsson/apPRoved/pkg/utils"
 )
@@ -21,4 +23,12 @@ func AuthMiddleware(c *fiber.Ctx) error {
 
 	c.Locals("userID", claims.UserID)
 	return c.Next()
+}
+
+func GetUserID(c *fiber.Ctx) uint {
+	userID, ok := c.Locals("userID").(uint)
+	if !ok {
+		log.Fatalf("could not get userID from context. Make sure to use the AuthMiddleware before calling GetUserID\n")
+	}
+	return userID
 }

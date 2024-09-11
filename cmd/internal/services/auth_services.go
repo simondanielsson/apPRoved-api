@@ -3,6 +3,7 @@ package services
 import (
 	"github.com/simondanielsson/apPRoved/cmd/internal/repositories"
 	"github.com/simondanielsson/apPRoved/pkg/utils"
+	"gorm.io/gorm"
 )
 
 type AuthService struct {
@@ -13,8 +14,8 @@ func NewAuthService(userRepository *repositories.UserRepository) *AuthService {
 	return &AuthService{userRepository: userRepository}
 }
 
-func (s *AuthService) AuthenticateUser(username, password string) (string, error) {
-	user, err := s.userRepository.GetUserByUsername(username)
+func (s *AuthService) AuthenticateUser(tx *gorm.DB, username, password string) (string, error) {
+	user, err := s.userRepository.GetUserByUsername(tx, username)
 	if err != nil {
 		return "", err
 	}

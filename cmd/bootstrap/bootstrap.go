@@ -4,13 +4,12 @@ import (
 	"github.com/simondanielsson/apPRoved/cmd/internal/controllers"
 	"github.com/simondanielsson/apPRoved/cmd/internal/repositories"
 	"github.com/simondanielsson/apPRoved/cmd/internal/services"
-	"gorm.io/gorm"
 )
 
-func InitRepositories(db *gorm.DB) *repositories.Repositories {
+func InitRepositories() *repositories.Repositories {
 	return &repositories.Repositories{
-		ReviewsRepository: repositories.NewReviewsRepository(db),
-		UserRepository:    repositories.NewUserRepository(db),
+		ReviewsRepository: repositories.NewReviewsRepository(),
+		UserRepository:    repositories.NewUserRepository(),
 	}
 }
 
@@ -26,6 +25,6 @@ func InitControllers(services *services.Services) *controllers.Controllers {
 	return &controllers.Controllers{
 		ReviewsController: controllers.NewReviewsController(services.ReviewsService),
 		UserController:    controllers.NewUserController(services.UserService),
-		AuthController:    controllers.NewAuthController(services.AuthService),
+		AuthController:    controllers.NewAuthController(services.AuthService, services.UserService),
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/simondanielsson/apPRoved/cmd/internal/repositories"
 	customerrors "github.com/simondanielsson/apPRoved/pkg/custom_errors"
 	"github.com/simondanielsson/apPRoved/pkg/utils"
+	"gorm.io/gorm"
 )
 
 // TODO: check if we can define an interface for the service.
@@ -17,7 +18,7 @@ func NewUserService(userRepository *repositories.UserRepository) *UserService {
 	return &UserService{userRepository: userRepository}
 }
 
-func (s *UserService) CreateUser(username, email, password string) (uint, error) {
+func (s *UserService) CreateUser(tx *gorm.DB, username, email, password string) (uint, error) {
 	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {
 		return 0, err
@@ -33,7 +34,7 @@ func (s *UserService) CreateUser(username, email, password string) (uint, error)
 		Password: hashedPassword,
 	}
 
-	userID, err := s.userRepository.CreateUser(&user)
+	userID, err := s.userRepository.CreateUser(tx, &user)
 	if err != nil {
 		return 0, err
 	}
@@ -41,8 +42,8 @@ func (s *UserService) CreateUser(username, email, password string) (uint, error)
 	return userID, nil
 }
 
-func (s *UserService) GetUsers() ([]models.User, error) {
-	users, err := s.userRepository.GetUsers()
+func (s *UserService) GetUsers(tx *gorm.DB) ([]models.User, error) {
+	users, err := s.userRepository.GetUsers(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +51,8 @@ func (s *UserService) GetUsers() ([]models.User, error) {
 	return users, nil
 }
 
-func (s *UserService) GetUser(userID uint) (*models.User, error) {
-	user, err := s.userRepository.GetUser(userID)
+func (s *UserService) GetUser(tx *gorm.DB, userID uint) (*models.User, error) {
+	user, err := s.userRepository.GetUser(tx, userID)
 	if err != nil {
 		return nil, err
 	}

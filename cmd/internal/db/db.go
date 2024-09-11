@@ -24,10 +24,11 @@ func NewDB(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 		log.Fatalf("could not connect to database %v\n", err)
 	}
 
-	if err := db.AutoMigrate(&models.User{}, &models.Repository{}); err != nil {
-		log.Fatalf("could not migrate database %v\n", err)
+	for _, model := range models.Models {
+		if err := db.AutoMigrate(model); err != nil {
+			log.Fatalf("failed to migrate model: %v", err)
+		}
 	}
-
 	log.Print("connected to database\n")
 	return db, nil
 }

@@ -9,8 +9,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "8090:8090"
+    networks:
+      - app-network
 
   postgres:
     image: postgres:16
@@ -26,6 +30,29 @@ services:
       retries: 3
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: approved-mq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
+  rabbitmqdata:
+
+networks:
+  app-network:
+    driver: bridge

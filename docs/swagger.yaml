@@ -1,4 +1,15 @@
 definitions:
+  requests.CompleteReviewRequest:
+    properties:
+      file_reviews:
+        items:
+          $ref: '#/definitions/requests.FileReviewRequest'
+        type: array
+      review_id:
+        type: integer
+      review_status_id:
+        type: integer
+    type: object
   requests.CreateRepositoryRequest:
     properties:
       name:
@@ -8,20 +19,16 @@ definitions:
       url:
         type: string
     type: object
-  requests.CreateUserRequest:
+  requests.CreateReviewRequest:
     properties:
-      email:
-        type: string
-      password:
-        type: string
-      username:
+      name:
         type: string
     type: object
-  requests.LoginRequest:
+  requests.FileReviewRequest:
     properties:
-      password:
+      content:
         type: string
-      username:
+      filename:
         type: string
     type: object
 info:
@@ -44,15 +51,19 @@ paths:
   /api/v1/login:
     post:
       consumes:
-      - application/json
+      - application/x-www-form-urlencoded
       description: Login to the application
       parameters:
-      - description: User login request
-        in: body
-        name: loginRequest
+      - description: Username
+        in: formData
+        name: username
         required: true
-        schema:
-          $ref: '#/definitions/requests.LoginRequest'
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -68,7 +79,51 @@ paths:
       summary: Login
       tags:
       - auth
-  /api/v1/reviews/repositories:
+  /api/v1/register:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Register a new user with a name, email, and password
+      parameters:
+      - description: Username
+        in: formData
+        name: username
+        required: true
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        required: true
+        type: string
+      - description: Email
+        in: formData
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Register
+      tags:
+      - auth
+  /api/v1/repositories:
     get:
       consumes:
       - application/json
@@ -130,6 +185,200 @@ paths:
       summary: Create repository
       tags:
       - reviews
+  /api/v1/repositories/{repositoryID}/pull-requests:
+    get:
+      consumes:
+      - application/json
+      description: Get all pull requests for repository
+      parameters:
+      - description: Repository ID
+        in: path
+        name: repositoryID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get pull requests
+      tags:
+      - reviews
+  /api/v1/repositories/{repositoryID}/pull-requests/{prID}/reviews:
+    get:
+      consumes:
+      - application/json
+      description: Get all reviews for a pull request
+      parameters:
+      - description: Repository ID
+        in: path
+        name: repositoryID
+        required: true
+        type: string
+      - description: Pull request ID
+        in: path
+        name: prID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get reviews
+      tags:
+      - reviews
+    post:
+      consumes:
+      - application/json
+      description: Create a review
+      parameters:
+      - description: Repository ID
+        in: path
+        name: repositoryID
+        required: true
+        type: string
+      - description: Pull request ID
+        in: path
+        name: prID
+        required: true
+        type: string
+      - description: Create review request
+        in: body
+        name: createReviewRequest
+        required: true
+        schema:
+          $ref: '#/definitions/requests.CreateReviewRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create review
+      tags:
+      - reviews
+  /api/v1/repositories/{repositoryID}/pull-requests/{prID}/reviews/{reviewID}:
+    get:
+      consumes:
+      - application/json
+      description: Get a review
+      parameters:
+      - description: Repository ID
+        in: path
+        name: repositoryID
+        required: true
+        type: string
+      - description: Pull request ID
+        in: path
+        name: prID
+        required: true
+        type: string
+      - description: Review ID
+        in: path
+        name: reviewID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get review
+      tags:
+      - reviews
+  /api/v1/reviews/complete:
+    post:
+      consumes:
+      - application/json
+      description: Complete a review
+      parameters:
+      - description: Update review status request
+        in: body
+        name: completeReviewRequest
+        required: true
+        schema:
+          $ref: '#/definitions/requests.CompleteReviewRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Complete review
+      tags:
+      - reviews
   /api/v1/users:
     get:
       consumes:
@@ -151,40 +400,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Get a list of users
-      tags:
-      - users
-    post:
-      consumes:
-      - application/json
-      description: Create a new user with a name, email, and password
-      parameters:
-      - description: User creation request
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/requests.CreateUserRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Create a new user
       tags:
       - users
   /api/v1/users/{id}:

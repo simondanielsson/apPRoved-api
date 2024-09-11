@@ -28,7 +28,7 @@ func (s *APIServer) Run() {
 func (s *APIServer) setupRoutes() {
 	apiV1 := s.app.Group("/api/v1")
 
-	repos := bootstrap.InitRepositories(s.db)
+	repos := bootstrap.InitRepositories()
 	services := bootstrap.InitServices(repos)
 	controllers := bootstrap.InitControllers(services)
 
