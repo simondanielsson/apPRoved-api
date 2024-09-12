@@ -55,6 +55,7 @@ type FileReview struct {
 	Review    Review    `gorm:"foreignKey:ReviewID" json:"review"`
 	Filename  string    `json:"filename"`
 	Content   string    `json:"content"`
+	Patch     string    `json:"patch"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

@@ -13,6 +13,7 @@ type CreateReviewRequest struct {
 type FileReviewRequest struct {
 	Filename string `json:"filename"`
 	Content  string `json:"content"`
+	Patch    string `json:"patch"`
 }
 
 type CompleteReviewRequest struct {

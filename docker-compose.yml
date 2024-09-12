@@ -49,6 +49,17 @@ services:
     networks:
       - app-network
 
+  llm-service:
+    image: approved-llm:latest
+    container_name: approved-llm
+    environment:
+      - APP_ENV=production
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - app-network
+
 volumes:
   postgres_data:
   rabbitmqdata:

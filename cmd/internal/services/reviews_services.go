@@ -125,6 +125,7 @@ func (rs *ReviewsService) GetReviews(tx *gorm.DB, repoID, prID uint) ([]*respons
 	for _, review := range reviews {
 		reviewResponse = append(reviewResponse, &responses.GetReviewsResponse{
 			ID:        review.ID,
+			Title:     review.Name,
 			CreatedAt: review.CreatedAt,
 			UpdatedAt: review.UpdatedAt,
 		})
@@ -150,6 +151,7 @@ func (rs *ReviewsService) GetReview(tx *gorm.DB, reviewID uint) (*responses.GetR
 			ID:        fr.ID,
 			Filename:  fr.Filename,
 			Content:   fr.Content,
+			Patch:     fr.Patch,
 			CreatedAt: fr.CreatedAt,
 			UpdatedAt: fr.UpdatedAt,
 		}
@@ -222,6 +224,7 @@ func (rs *ReviewsService) CompleteReview(tx *gorm.DB, req *requests.CompleteRevi
 			ReviewID: req.ReviewID,
 			Filename: review.Filename,
 			Content:  review.Content,
+			Patch:    review.Patch,
 		}
 		fileReviews = append(fileReviews, &fr)
 	}
