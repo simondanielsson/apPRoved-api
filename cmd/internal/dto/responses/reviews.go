@@ -23,6 +23,7 @@ type GetPullRequestResponse struct {
 
 type GetReviewsResponse struct {
 	ID        uint      `json:"id"`
+	Title     string    `json:"title"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -38,6 +39,7 @@ type GetFileReviewResponse struct {
 	ID        uint      `json:"id"`
 	Filename  string    `json:"filename"`
 	Content   string    `json:"content"`
+	Patch     string    `json:"patch"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
