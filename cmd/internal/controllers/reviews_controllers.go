@@ -67,14 +67,14 @@ func (rc *ReviewsController) RegisterRepository(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Could not parse request body"})
 	}
 
-	repoID, err := rc.reviewsService.RegisterRepository(ctx, tx, userID, req.Name, req.Owner, req.URL)
+	repo, err := rc.reviewsService.RegisterRepository(ctx, tx, userID, req.Name, req.Owner, req.URL)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not create repository", "error": err.Error()})
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "Repository created",
-		"id":      repoID,
+		"data":    repo,
 	})
 }
 

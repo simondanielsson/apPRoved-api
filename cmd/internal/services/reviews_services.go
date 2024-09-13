@@ -47,7 +47,7 @@ func (rs *ReviewsService) GetRepositories(tx *gorm.DB, userID uint) ([]*response
 }
 
 // RegisterRepository registers a new repository and its pull requests
-func (rs *ReviewsService) RegisterRepository(ctx context.Context, tx *gorm.DB, userID uint, name, owner, url string) (uint, error) {
+func (rs *ReviewsService) RegisterRepository(ctx context.Context, tx *gorm.DB, userID uint, name, owner, url string) (*responses.GetRepositoriesResponse, error) {
 	repo := &models.Repository{
 		UserID: userID,
 		Name:   name,
@@ -56,18 +56,27 @@ func (rs *ReviewsService) RegisterRepository(ctx context.Context, tx *gorm.DB, u
 	}
 	repo, err := rs.reviewsRepository.CreateRepository(tx, repo)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	prs, err := rs.findPullRequests(ctx, repo, userID)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	if err := rs.reviewsRepository.CreatePullRequests(tx, prs); err != nil {
-		return 0, err
+		return nil, err
 	}
-	return repo.ID, nil
+
+	response := &responses.GetRepositoriesResponse{
+		ID:        repo.ID,
+		Name:      repo.Name,
+		Owner:     repo.Owner,
+		URL:       repo.URL,
+		CreatedAt: repo.CreatedAt,
+		UpdatedAt: repo.UpdatedAt,
+	}
+	return response, nil
 }
 
 func (rs *ReviewsService) findPullRequests(ctx context.Context, repo *models.Repository, userID uint) ([]*models.PullRequest, error) {

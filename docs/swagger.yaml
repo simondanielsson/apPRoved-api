@@ -30,6 +30,8 @@ definitions:
         type: string
       filename:
         type: string
+      patch:
+        type: string
     type: object
 info:
   contact: {}

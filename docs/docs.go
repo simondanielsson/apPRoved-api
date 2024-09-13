@@ -645,6 +645,9 @@ const docTemplate = `{
                 },
                 "filename": {
                     "type": "string"
+                },
+                "patch": {
+                    "type": "string"
                 }
             }
         }
