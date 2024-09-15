@@ -13,7 +13,14 @@ type OptionalMiddlewares struct {
 }
 
 func SetupMiddlewares(app *fiber.App) {
-	app.Use(cors.New())
+	app.Use(cors.New(
+		cors.Config{
+			AllowOrigins:     "http://localhost:5173, http://host.docker.internal:5173, http://approved-frontend:5173",
+			AllowCredentials: true,
+			AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
+			AllowHeaders:     "Authorization,Content-Type",
+		},
+	))
 
 	app.Use(logger.New(logger.Config{
 		Format:     "${time} ${status} - ${method} ${path}\n",
