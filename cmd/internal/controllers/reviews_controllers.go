@@ -220,7 +220,7 @@ func (rc *ReviewsController) CreateReview(c *fiber.Ctx) error {
 	tx := db.GetDBTransaction(c)
 	userID := middlewares.GetUserID(c)
 	ctx := context.Background()
-	reviewID, err := rc.reviewsService.CreateReview(tx, ctx, repoID, prID, req.Name, userID)
+	review, err := rc.reviewsService.CreateReview(tx, ctx, repoID, prID, req.Name, userID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Could not create review",
@@ -228,11 +228,11 @@ func (rc *ReviewsController) CreateReview(c *fiber.Ctx) error {
 		})
 	}
 
-	c.Set("Location", fmt.Sprintf("/api/v1/repositories/%d/pull-requests/%d/reviews/%d/status", repoID, prID, reviewID))
+	c.Set("Location", fmt.Sprintf("/api/v1/repositories/%d/pull-requests/%d/reviews/%d/progress", repoID, prID, review.ID))
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "Review initiated.",
-		"id":      reviewID,
+		"data":    review,
 	})
 }
 
@@ -263,5 +263,39 @@ func (rc *ReviewsController) CompleteReview(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "Review completed.",
+	})
+}
+
+func (rc *ReviewsController) GetReviewProgress(c *fiber.Ctx) error {
+	repoID, err := utils.ReadUintPathParam(c, "repositoryID")
+	if err != nil {
+		return err
+	}
+	prID, err := utils.ReadUintPathParam(c, "prID")
+	if err != nil {
+		return err
+	}
+	reviewID, err := utils.ReadUintPathParam(c, "reviewID")
+	if err != nil {
+		return err
+	}
+
+	tx := db.GetDBTransaction(c)
+	reviewStatus, err := rc.reviewsService.GetReviewStatus(tx, repoID, prID, reviewID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Could not get review progress",
+			"error":   err.Error(),
+		})
+	}
+
+	c.Set("Location", fmt.Sprintf("/api/v1/repositories/%d/pull-requests/%d/reviews/%d/progress", repoID, prID, reviewID))
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"message": "Fetched progress successfully.",
+		"data": fiber.Map{
+			"status":   reviewStatus.Status,
+			"progress": reviewStatus.Progress,
+		},
 	})
 }

@@ -1,6 +1,10 @@
 package responses
 
-import "time"
+import (
+	"time"
+
+	"github.com/simondanielsson/apPRoved/cmd/internal/constants"
+)
 
 type GetRepositoriesResponse struct {
 	ID        uint      `json:"id"`
@@ -22,10 +26,11 @@ type GetPullRequestResponse struct {
 }
 
 type GetReviewsResponse struct {
-	ID        uint      `json:"id"`
-	Title     string    `json:"title"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        uint                   `json:"id"`
+	Title     string                 `json:"title"`
+	Status    constants.ReviewStatus `json:"status"`
+	CreatedAt time.Time              `json:"created_at"`
+	UpdatedAt time.Time              `json:"updated_at"`
 }
 
 type GetReviewResponse struct {

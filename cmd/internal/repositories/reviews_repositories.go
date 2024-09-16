@@ -118,6 +118,26 @@ func (r *ReviewsRepository) CreateReviewStatus(tx *gorm.DB, reviewStatus *models
 	return nil
 }
 
+func (r *ReviewsRepository) GetReviewStatuses(tx *gorm.DB, reviewIDs []uint) (*[]models.ReviewStatus, error) {
+	var reviewStatus []models.ReviewStatus
+
+	if err := tx.Model(&models.ReviewStatus{}).Where("review_id IN ?", reviewIDs).Find(&reviewStatus).Error; err != nil {
+		return nil, err
+	}
+
+	return &reviewStatus, nil
+}
+
+func (r *ReviewsRepository) GetReviewStatus(tx *gorm.DB, reviewID uint) (*models.ReviewStatus, error) {
+	var reviewStatus models.ReviewStatus
+
+	if err := tx.Model(&models.ReviewStatus{}).Where("review_id = ?", reviewID).First(&reviewStatus).Error; err != nil {
+		return nil, err
+	}
+
+	return &reviewStatus, nil
+}
+
 func (r *ReviewsRepository) CreateFileReviews(tx *gorm.DB, fileReviews []*models.FileReview) error {
 	if len(fileReviews) == 0 {
 		log.Printf("No file reviews to insert")

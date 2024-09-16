@@ -130,11 +130,25 @@ func (rs *ReviewsService) GetReviews(tx *gorm.DB, repoID, prID uint) ([]*respons
 		return nil, err
 	}
 
+	reviewIDs := []uint{}
+	for _, review := range reviews {
+		reviewIDs = append(reviewIDs, review.ID)
+	}
+	reviewStatus, err := rs.reviewsRepository.GetReviewStatuses(tx, reviewIDs)
+	if err != nil {
+		return nil, err
+	}
+	mapReviewStatusByID := make(map[uint]constants.ReviewStatus)
+	for _, status := range *reviewStatus {
+		mapReviewStatusByID[status.ReviewID] = status.Status
+	}
+
 	var reviewResponse []*responses.GetReviewsResponse
 	for _, review := range reviews {
 		reviewResponse = append(reviewResponse, &responses.GetReviewsResponse{
 			ID:        review.ID,
 			Title:     review.Name,
+			Status:    mapReviewStatusByID[review.ID],
 			CreatedAt: review.CreatedAt,
 			UpdatedAt: review.UpdatedAt,
 		})
@@ -170,15 +184,15 @@ func (rs *ReviewsService) GetReview(tx *gorm.DB, reviewID uint) (*responses.GetR
 	return response, nil
 }
 
-func (rs *ReviewsService) CreateReview(tx *gorm.DB, ctx context.Context, repoID, prID uint, name string, userID uint) (uint, error) {
+func (rs *ReviewsService) CreateReview(tx *gorm.DB, ctx context.Context, repoID, prID uint, name string, userID uint) (*responses.GetReviewsResponse, error) {
 	repo, err := rs.reviewsRepository.GetRepository(tx, repoID)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	pr, err := rs.reviewsRepository.GetPullRequest(tx, prID)
 	if err != nil {
-		return 0, nil
+		return nil, nil
 	}
 
 	review := &models.Review{
@@ -187,7 +201,7 @@ func (rs *ReviewsService) CreateReview(tx *gorm.DB, ctx context.Context, repoID,
 	}
 	review, err = rs.reviewsRepository.CreateReview(tx, review)
 	if err != nil {
-		return 0, nil
+		return nil, nil
 	}
 
 	reviewStatus := &models.ReviewStatus{
@@ -195,7 +209,7 @@ func (rs *ReviewsService) CreateReview(tx *gorm.DB, ctx context.Context, repoID,
 		Status:   constants.StatusQueued,
 	}
 	if err := rs.reviewsRepository.CreateReviewStatus(tx, reviewStatus); err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	// fetch file diffs for the PR from github using github client
@@ -222,8 +236,15 @@ func (rs *ReviewsService) CreateReview(tx *gorm.DB, ctx context.Context, repoID,
 		}
 	}()
 
-	// return the review id
-	return review.ID, nil
+	response := &responses.GetReviewsResponse{
+		ID:        review.ID,
+		Title:     review.Name,
+		Status:    reviewStatus.Status,
+		CreatedAt: review.CreatedAt,
+		UpdatedAt: review.UpdatedAt,
+	}
+
+	return response, nil
 }
 
 func (rs *ReviewsService) CompleteReview(tx *gorm.DB, req *requests.CompleteReviewRequest) error {
@@ -251,4 +272,13 @@ func (rs *ReviewsService) CompleteReview(tx *gorm.DB, req *requests.CompleteRevi
 	}
 
 	return nil
+}
+
+func (rs *ReviewsService) GetReviewStatus(tx *gorm.DB, repoID, prID, reviewID uint) (*models.ReviewStatus, error) {
+	reviewStatus, err := rs.reviewsRepository.GetReviewStatus(tx, reviewID)
+	if err != nil {
+		return nil, err
+	}
+
+	return reviewStatus, nil
 }
