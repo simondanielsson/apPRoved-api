@@ -30,6 +30,8 @@ definitions:
         type: string
       filename:
         type: string
+      patch:
+        type: string
     type: object
 info:
   contact: {}
@@ -303,6 +305,49 @@ paths:
       tags:
       - reviews
   /api/v1/repositories/{repositoryID}/pull-requests/{prID}/reviews/{reviewID}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a review
+      parameters:
+      - description: Repository ID
+        in: path
+        name: repositoryID
+        required: true
+        type: string
+      - description: Pull request ID
+        in: path
+        name: prID
+        required: true
+        type: string
+      - description: Review ID
+        in: path
+        name: reviewID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete review
+      tags:
+      - reviews
     get:
       consumes:
       - application/json
@@ -344,6 +389,50 @@ paths:
       security:
       - BearerAuth: []
       summary: Get review
+      tags:
+      - reviews
+  /api/v1/repositories/{repositoryID}/pull-requests/{prID}/reviews/{reviewID}/progress:
+    get:
+      consumes:
+      - application/json
+      description: Get review progress
+      parameters:
+      - description: Repository ID
+        in: path
+        name: repositoryID
+        required: true
+        type: string
+      - description: Pull request ID
+        in: path
+        name: prID
+        required: true
+        type: string
+      - description: Review ID
+        in: path
+        name: reviewID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get review progress
       tags:
       - reviews
   /api/v1/reviews/complete:

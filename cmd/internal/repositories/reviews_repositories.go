@@ -110,12 +110,48 @@ func (r *ReviewsRepository) CreateReview(tx *gorm.DB, review *models.Review) (*m
 	return review, nil
 }
 
+// DeleteReview deletes a review from the database
+func (r *ReviewsRepository) DeleteReview(tx *gorm.DB, reviewID uint) error {
+	var review models.Review
+
+	// preload the id of the review to delete the review status and file reviews
+	if err := tx.Preload("FileReviews").Preload("ReviewStatus").First(&review, reviewID).Error; err != nil {
+		return fmt.Errorf("failed to find review with id %d: %v", reviewID, err)
+	}
+
+	if err := tx.Delete(&review).Error; err != nil {
+		return fmt.Errorf("failed to delete review with id %d: %v", reviewID, err)
+	}
+
+	return nil
+}
+
 // CreateReviewStatus inserts a review status into the database
 func (r *ReviewsRepository) CreateReviewStatus(tx *gorm.DB, reviewStatus *models.ReviewStatus) error {
 	if err := tx.Create(reviewStatus).Error; err != nil {
 		return err
 	}
 	return nil
+}
+
+func (r *ReviewsRepository) GetReviewStatuses(tx *gorm.DB, reviewIDs []uint) (*[]models.ReviewStatus, error) {
+	var reviewStatus []models.ReviewStatus
+
+	if err := tx.Model(&models.ReviewStatus{}).Where("review_id IN ?", reviewIDs).Find(&reviewStatus).Error; err != nil {
+		return nil, err
+	}
+
+	return &reviewStatus, nil
+}
+
+func (r *ReviewsRepository) GetReviewStatus(tx *gorm.DB, reviewID uint) (*models.ReviewStatus, error) {
+	var reviewStatus models.ReviewStatus
+
+	if err := tx.Model(&models.ReviewStatus{}).Where("review_id = ?", reviewID).First(&reviewStatus).Error; err != nil {
+		return nil, err
+	}
+
+	return &reviewStatus, nil
 }
 
 func (r *ReviewsRepository) CreateFileReviews(tx *gorm.DB, fileReviews []*models.FileReview) error {

@@ -9,18 +9,23 @@ import (
 
 // AuthMiddleware is a middleware that checks if the request has a valid JWT token, and attaches the user ID to the context.
 func AuthMiddleware(c *fiber.Ctx) error {
-	// Authorization: Bearer <token>
+	var token string
+
 	authHeader := c.Get("Authorization")
-	if authHeader == "" {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "missing Authorization header"})
+	if authHeader != "" {
+		token = authHeader[len("Bearer "):]
+	} else {
+		token = c.Cookies("token")
 	}
 
-	token := authHeader[len("Bearer "):]
+	if token == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "Authorization failed"})
+	}
+
 	claims, err := utils.ParseJWTToken(token)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "invalid token"})
 	}
-
 	c.Locals("userID", claims.UserID)
 	return c.Next()
 }

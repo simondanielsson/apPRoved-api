@@ -67,14 +67,14 @@ func (rc *ReviewsController) RegisterRepository(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Could not parse request body"})
 	}
 
-	repoID, err := rc.reviewsService.RegisterRepository(ctx, tx, userID, req.Name, req.Owner, req.URL)
+	repo, err := rc.reviewsService.RegisterRepository(ctx, tx, userID, req.Name, req.Owner, req.URL)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not create repository", "error": err.Error()})
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "Repository created",
-		"id":      repoID,
+		"data":    repo,
 	})
 }
 
@@ -220,7 +220,7 @@ func (rc *ReviewsController) CreateReview(c *fiber.Ctx) error {
 	tx := db.GetDBTransaction(c)
 	userID := middlewares.GetUserID(c)
 	ctx := context.Background()
-	reviewID, err := rc.reviewsService.CreateReview(tx, ctx, repoID, prID, req.Name, userID)
+	review, err := rc.reviewsService.CreateReview(tx, ctx, repoID, prID, req.Name, userID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Could not create review",
@@ -228,15 +228,55 @@ func (rc *ReviewsController) CreateReview(c *fiber.Ctx) error {
 		})
 	}
 
-	c.Set("Location", fmt.Sprintf("/api/v1/repositories/%d/pull-requests/%d/reviews/%d/status", repoID, prID, reviewID))
+	c.Set("Location", fmt.Sprintf("/api/v1/repositories/%d/pull-requests/%d/reviews/%d/progress", repoID, prID, review.ID))
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "Review initiated.",
-		"id":      reviewID,
+		"data":    review,
 	})
 }
 
-// generate swagger docs
+// Generate swagger docs
+// @Summary Delete review
+// @Description Delete a review
+// @Tags reviews
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param        repositoryID  path  string  true  "Repository ID"
+// @Param        prID          path  string  true  "Pull request ID"
+// @Param        reviewID  path  string  true  "Review ID"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /api/v1/repositories/{repositoryID}/pull-requests/{prID}/reviews/{reviewID} [delete]
+func (rc *ReviewsController) DeleteReview(c *fiber.Ctx) error {
+	repoID, err := utils.ReadUintPathParam(c, "repositoryID")
+	if err != nil {
+		return err
+	}
+	prID, err := utils.ReadUintPathParam(c, "prID")
+	if err != nil {
+		return err
+	}
+	reviewID, err := utils.ReadUintPathParam(c, "reviewID")
+	if err != nil {
+		return err
+	}
+
+	tx := db.GetDBTransaction(c)
+	if err := rc.reviewsService.DeleteReview(tx, repoID, prID, reviewID); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Could not delete review",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Review deleted successfully",
+	})
+}
+
 // @Summary Complete review
 // @Description Complete a review
 // @Tags reviews
@@ -263,5 +303,53 @@ func (rc *ReviewsController) CompleteReview(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"message": "Review completed.",
+	})
+}
+
+// write swagger docs
+// @Summary Get review progress
+// @Description Get review progress
+// @Tags reviews
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param        repositoryID  path  string  true  "Repository ID"
+// @Param        prID          path  string  true  "Pull request ID"
+// @Param        reviewID  path  string  true  "Review ID"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /api/v1/repositories/{repositoryID}/pull-requests/{prID}/reviews/{reviewID}/progress [get]
+func (rc *ReviewsController) GetReviewProgress(c *fiber.Ctx) error {
+	repoID, err := utils.ReadUintPathParam(c, "repositoryID")
+	if err != nil {
+		return err
+	}
+	prID, err := utils.ReadUintPathParam(c, "prID")
+	if err != nil {
+		return err
+	}
+	reviewID, err := utils.ReadUintPathParam(c, "reviewID")
+	if err != nil {
+		return err
+	}
+
+	tx := db.GetDBTransaction(c)
+	reviewStatus, err := rc.reviewsService.GetReviewStatus(tx, repoID, prID, reviewID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Could not get review progress",
+			"error":   err.Error(),
+		})
+	}
+
+	c.Set("Location", fmt.Sprintf("/api/v1/repositories/%d/pull-requests/%d/reviews/%d/progress", repoID, prID, reviewID))
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Fetched progress successfully.",
+		"data": fiber.Map{
+			"status":   reviewStatus.Status,
+			"progress": reviewStatus.Progress,
+		},
 	})
 }

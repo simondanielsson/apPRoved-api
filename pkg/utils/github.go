@@ -61,7 +61,11 @@ func ListPullRequests(ctx context.Context, repoName, repoOwner string, userID ui
 	for {
 		fetched_prs, resp, err := client.PullRequests.List(ctx, repoOwner, repoName, opts)
 		if err != nil {
-			return nil, err
+			if r, _ := err.(*github.ErrorResponse); r.Response.StatusCode == 404 {
+				fetched_prs = []*github.PullRequest{}
+			} else {
+				return nil, err
+			}
 		}
 
 		for _, pr := range fetched_prs {
