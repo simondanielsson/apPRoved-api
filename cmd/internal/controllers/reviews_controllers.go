@@ -266,6 +266,20 @@ func (rc *ReviewsController) CompleteReview(c *fiber.Ctx) error {
 	})
 }
 
+// write swagger docs
+// @Summary Get review progress
+// @Description Get review progress
+// @Tags reviews
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param        repositoryID  path  string  true  "Repository ID"
+// @Param        prID          path  string  true  "Pull request ID"
+// @Param        reviewID  path  string  true  "Review ID"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /api/v1/repositories/{repositoryID}/pull-requests/{prID}/reviews/{reviewID}/progress [get]
 func (rc *ReviewsController) GetReviewProgress(c *fiber.Ctx) error {
 	repoID, err := utils.ReadUintPathParam(c, "repositoryID")
 	if err != nil {
@@ -291,7 +305,7 @@ func (rc *ReviewsController) GetReviewProgress(c *fiber.Ctx) error {
 
 	c.Set("Location", fmt.Sprintf("/api/v1/repositories/%d/pull-requests/%d/reviews/%d/progress", repoID, prID, reviewID))
 
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Fetched progress successfully.",
 		"data": fiber.Map{
 			"status":   reviewStatus.Status,

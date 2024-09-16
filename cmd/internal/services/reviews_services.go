@@ -138,17 +138,22 @@ func (rs *ReviewsService) GetReviews(tx *gorm.DB, repoID, prID uint) ([]*respons
 	if err != nil {
 		return nil, err
 	}
-	mapReviewStatusByID := make(map[uint]constants.ReviewStatus)
+	mapReviewStatusByID := make(map[uint]models.ReviewStatus)
 	for _, status := range *reviewStatus {
-		mapReviewStatusByID[status.ReviewID] = status.Status
+		mapReviewStatusByID[status.ReviewID] = status
 	}
 
 	var reviewResponse []*responses.GetReviewsResponse
 	for _, review := range reviews {
+		reviewStatus, ok := mapReviewStatusByID[review.ID]
+		if !ok {
+			return nil, err
+		}
 		reviewResponse = append(reviewResponse, &responses.GetReviewsResponse{
 			ID:        review.ID,
 			Title:     review.Name,
-			Status:    mapReviewStatusByID[review.ID],
+			Status:    reviewStatus.Status,
+			Progress:  reviewStatus.Progress,
 			CreatedAt: review.CreatedAt,
 			UpdatedAt: review.UpdatedAt,
 		})
@@ -240,6 +245,7 @@ func (rs *ReviewsService) CreateReview(tx *gorm.DB, ctx context.Context, repoID,
 		ID:        review.ID,
 		Title:     review.Name,
 		Status:    reviewStatus.Status,
+		Progress:  reviewStatus.Progress,
 		CreatedAt: review.CreatedAt,
 		UpdatedAt: review.UpdatedAt,
 	}

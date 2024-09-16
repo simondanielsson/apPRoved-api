@@ -29,6 +29,7 @@ type GetReviewsResponse struct {
 	ID        uint                   `json:"id"`
 	Title     string                 `json:"title"`
 	Status    constants.ReviewStatus `json:"status"`
+	Progress  int                    `json:"progress"`
 	CreatedAt time.Time              `json:"created_at"`
 	UpdatedAt time.Time              `json:"updated_at"`
 }
