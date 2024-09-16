@@ -236,7 +236,47 @@ func (rc *ReviewsController) CreateReview(c *fiber.Ctx) error {
 	})
 }
 
-// generate swagger docs
+// Generate swagger docs
+// @Summary Delete review
+// @Description Delete a review
+// @Tags reviews
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param        repositoryID  path  string  true  "Repository ID"
+// @Param        prID          path  string  true  "Pull request ID"
+// @Param        reviewID  path  string  true  "Review ID"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /api/v1/repositories/{repositoryID}/pull-requests/{prID}/reviews/{reviewID} [delete]
+func (rc *ReviewsController) DeleteReview(c *fiber.Ctx) error {
+	repoID, err := utils.ReadUintPathParam(c, "repositoryID")
+	if err != nil {
+		return err
+	}
+	prID, err := utils.ReadUintPathParam(c, "prID")
+	if err != nil {
+		return err
+	}
+	reviewID, err := utils.ReadUintPathParam(c, "reviewID")
+	if err != nil {
+		return err
+	}
+
+	tx := db.GetDBTransaction(c)
+	if err := rc.reviewsService.DeleteReview(tx, repoID, prID, reviewID); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Could not delete review",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Review deleted successfully",
+	})
+}
+
 // @Summary Complete review
 // @Description Complete a review
 // @Tags reviews

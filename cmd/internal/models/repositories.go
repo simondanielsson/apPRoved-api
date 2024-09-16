@@ -44,7 +44,8 @@ type Review struct {
 	Name          string
 	PullRequestID uint         `json:"pull_request_id"`
 	PullRequest   PullRequest  `gorm:"foreignKey:PullRequestID" json:"pull_request"`
-	FileReviews   []FileReview `gorm:"foreignKey:ReviewID" json:"file_reviews"`
+	FileReviews   []FileReview `gorm:"foreignKey:ReviewID;constraint:OnDelete:CASCADE;" json:"file_reviews"`
+	ReviewStatus  ReviewStatus `gorm:"foreignKey:ReviewID;constraint:OnDelete:CASCADE;" json:"review_status"`
 	CreatedAt     time.Time    `json:"created_at"`
 	UpdatedAt     time.Time    `json:"updated_at"`
 }
@@ -52,7 +53,6 @@ type Review struct {
 type FileReview struct {
 	ID        uint      `gorm:"primary_key" json:"id"`
 	ReviewID  uint      `json:"review_id"`
-	Review    Review    `gorm:"foreignKey:ReviewID" json:"review"`
 	Filename  string    `json:"filename"`
 	Content   string    `json:"content"`
 	Patch     string    `json:"patch"`
@@ -63,7 +63,6 @@ type FileReview struct {
 type ReviewStatus struct {
 	ID        uint                   `gorm:"primary_key" json:"id"`
 	ReviewID  uint                   `json:"review_id"`
-	Review    Review                 `gorm:"foreignKey:ReviewID" json:"review"`
 	Status    constants.ReviewStatus `json:"status"`
 	Progress  int                    `json:"progress"`
 	CreatedAt time.Time              `json:"created_at"`

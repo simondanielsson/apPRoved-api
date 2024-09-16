@@ -19,6 +19,7 @@ func RegisterReviewsRoutes(apiV1 fiber.Router, reviewsController *controllers.Re
 	router.Get("/:repositoryID/pull-requests/:prID/reviews/:reviewID", reviewsController.GetReview)
 	router.Post("/:repositoryID/pull-requests/:prID/reviews", reviewsController.CreateReview)
 	router.Get("/:repositoryID/pull-requests/:prID/reviews/:reviewID/progress", reviewsController.GetReviewProgress)
+	router.Delete("/:repositoryID/pull-requests/:prID/reviews/:reviewID", reviewsController.DeleteReview)
 
 	apiV1.Post("/reviews/complete", opt_middlewares.Transaction, reviewsController.CompleteReview)
 }

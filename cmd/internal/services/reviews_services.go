@@ -253,6 +253,14 @@ func (rs *ReviewsService) CreateReview(tx *gorm.DB, ctx context.Context, repoID,
 	return response, nil
 }
 
+func (rs *ReviewsService) DeleteReview(tx *gorm.DB, repoID, prID, reviewID uint) error {
+	if err := rs.reviewsRepository.DeleteReview(tx, reviewID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (rs *ReviewsService) CompleteReview(tx *gorm.DB, req *requests.CompleteReviewRequest) error {
 	var fileReviews []*models.FileReview
 	for _, review := range req.FileReviews {
