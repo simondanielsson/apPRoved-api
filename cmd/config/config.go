@@ -14,6 +14,7 @@ import (
 type ServerConfig struct {
 	BindAddr string `mapstructure:"bind_address"`
 	Mode     string `mapstructure:"mode"`
+	AMQPMode string `mapstructure:"amqp_mode"`
 }
 
 type DatabaseConfig struct {
@@ -42,11 +43,17 @@ type RabbitMQConfig struct {
 	Queues []RabbitMQQueueConfig `mapstructure:"queues"`
 }
 
+type PubSubConfig struct {
+	ProjectID string   `mapstructure:"project_id"`
+	Topics    []string `mapstructure:"topics"`
+}
+
 type Config struct {
 	Server   *ServerConfig   `mapstructure:"server"`
 	Database *DatabaseConfig `mapstructure:"database"`
 	JWT      *JWTConfig      `mapstructure:"jwt"`
 	MQ       *RabbitMQConfig `mapstructure:"mq"`
+	PubSub   *PubSubConfig   `mapstructure:"pubsub"`
 }
 
 func LoadConfig() (*Config, error) {
@@ -65,16 +72,7 @@ func LoadConfig() (*Config, error) {
 	viper.SetConfigType("yaml")
 
 	viper.AutomaticEnv()
-	customerrors.IgnoreError(viper.BindEnv("server.mode", "APP_ENV"))
-	customerrors.IgnoreError(viper.BindEnv("server.bind_address", "APP_PORT"))
-	customerrors.IgnoreError(viper.BindEnv("database.user", "POSTGRES_USER"))
-	customerrors.IgnoreError(viper.BindEnv("database.user", "POSTGRES_USER"))
-	customerrors.IgnoreError(viper.BindEnv("database.password", "POSTGRES_PASSWORD"))
-	customerrors.IgnoreError(viper.BindEnv("database.host", "POSTGRES_HOST"))
-	customerrors.IgnoreError(viper.BindEnv("database.port", "POSTGRES_PORT"))
-	customerrors.IgnoreError(viper.BindEnv("database.dbname", "POSTGRES_DBNAME"))
-	customerrors.IgnoreError(viper.BindEnv("jwt.secret", "JWT_KEY"))
-	customerrors.IgnoreError(viper.BindEnv("mq.url", "AMQP_URL"))
+	parseEnvironmentVariables()
 
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, err
@@ -97,10 +95,30 @@ func LoadConfig() (*Config, error) {
 	if cfg.MQ == nil {
 		log.Fatalf("rabbitmq config is missing")
 	}
+	if cfg.PubSub == nil {
+		log.Fatalf("pubsub config is missing")
+	}
 
 	if err := ValidateRabbitMQConfig(cfg.MQ); err != nil {
 		log.Fatalf("configuration validation error: %v", err)
 	}
 
 	return &cfg, nil
+}
+
+func parseEnvironmentVariables() {
+	customerrors.IgnoreError(viper.BindEnv("server.mode", "APP_ENV"))
+	customerrors.IgnoreError(viper.BindEnv("server.bind_address", "APP_PORT"))
+	customerrors.IgnoreError(viper.BindEnv("server.amqp_mode", "AMQP_MODE"))
+
+	customerrors.IgnoreError(viper.BindEnv("database.user", "POSTGRES_USER"))
+	customerrors.IgnoreError(viper.BindEnv("database.user", "POSTGRES_USER"))
+	customerrors.IgnoreError(viper.BindEnv("database.password", "POSTGRES_PASSWORD"))
+	customerrors.IgnoreError(viper.BindEnv("database.host", "POSTGRES_HOST"))
+	customerrors.IgnoreError(viper.BindEnv("database.port", "POSTGRES_PORT"))
+	customerrors.IgnoreError(viper.BindEnv("database.dbname", "POSTGRES_DBNAME"))
+
+	customerrors.IgnoreError(viper.BindEnv("jwt.secret", "JWT_KEY"))
+	customerrors.IgnoreError(viper.BindEnv("mq.url", "AMQP_URL"))
+	customerrors.IgnoreError(viper.BindEnv("pubsub.project_id", "GCP_PROJECT_ID"))
 }

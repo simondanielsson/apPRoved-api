@@ -3,7 +3,7 @@ package responses
 import (
 	"time"
 
-	"github.com/simondanielsson/apPRoved/cmd/internal/constants"
+	"github.com/simondanielsson/apPRoved/cmd/constants"
 )
 
 type GetRepositoriesResponse struct {

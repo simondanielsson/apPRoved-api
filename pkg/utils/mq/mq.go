@@ -1,34 +1,86 @@
 package mq
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"sync"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/simondanielsson/apPRoved/cmd/config"
 )
 
-var (
-	rabbitMQConn    *amqp.Connection
-	rabbitMQChannel *amqp.Channel
-)
+type RabbitMQ struct {
+	conn         *amqp.Connection
+	channel      *amqp.Channel
+	connStr      string
+	mutex        sync.Mutex
+	connected    bool
+	reconnectDur time.Duration
+}
+
+// NewRabbitMQ creates a new RabbitMQ
+func NewRabbitMQ(cfg interface{}) (*RabbitMQ, error) {
+	cfgMQ := cfg.(*config.RabbitMQConfig)
+	queue := &RabbitMQ{
+		connStr:      cfgMQ.Url,
+		reconnectDur: 5 * time.Second,
+	}
+	if err := queue.connect(); err != nil {
+		log.Fatalf("error initializing RabbitMQ: %v", err)
+	}
+	if err := queue.declareQueues(cfgMQ); err != nil {
+		return nil, err
+	}
+
+	return queue, nil
+}
 
 // InitRabbitMQ initializes the RabbitMQ connection and channel
-func InitRabbitMQ(cfg *config.RabbitMQConfig) error {
-	var err error
+func (r *RabbitMQ) connect() error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	fmt.Println("Initializing RabbitMQ connection...")
 
-	rabbitMQConn, err = amqp.Dial(cfg.Url)
+	if r.connected {
+		return nil
+	}
+
+	conn, err := amqp.Dial(r.connStr)
 	if err != nil {
 		return err
 	}
 
-	rabbitMQChannel, err = rabbitMQConn.Channel()
+	channel, err := conn.Channel()
 	if err != nil {
 		return err
 	}
 
+	r.conn = conn
+	r.channel = channel
+	r.connected = true
+
+	fmt.Println("RabbitMQ connection initialized")
+	return nil
+}
+
+func (r *RabbitMQ) reconnect() {
+	for {
+		if err := r.connect(); err != nil {
+			log.Printf("Failed to reconnect to RabbitMQ: %v. Retrying in %v...\n", err, r.reconnectDur)
+			time.Sleep(r.reconnectDur)
+		} else {
+			log.Println("Successfully reconnected to RabbitMQ.")
+			break
+		}
+	}
+}
+
+func (r *RabbitMQ) declareQueues(cfg *config.RabbitMQConfig) error {
 	for _, queue := range cfg.Queues {
-		_, err = rabbitMQChannel.QueueDeclare(
+		_, err := r.channel.QueueDeclare(
 			queue.Name,
 			queue.Durable,
 			queue.AutoDelete,
@@ -45,23 +97,35 @@ func InitRabbitMQ(cfg *config.RabbitMQConfig) error {
 	return nil
 }
 
-func CloseRabbitMQ() {
-	if rabbitMQChannel != nil {
-		rabbitMQChannel.Close()
-	}
+func (r *RabbitMQ) Close() {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+	fmt.Println("Closing RabbitMQ connection...")
 
-	if rabbitMQConn != nil {
-		rabbitMQConn.Close()
+	if r.channel != nil {
+		r.channel.Close()
 	}
+	if r.conn != nil {
+		r.conn.Close()
+	}
+	r.connected = false
 }
 
-func Publish(queue config.QueueName, message interface{}) error {
+func (r *RabbitMQ) Publish(ctx context.Context, queue config.QueueName, message interface{}) error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	if !r.connected {
+		return amqp.ErrClosed
+	}
+
 	body, err := json.Marshal(message)
 	if err != nil {
 		return err
 	}
 
-	err = rabbitMQChannel.Publish(
+	fmt.Printf("Publishing message to queue %s\n", queue)
+	err = r.channel.Publish(
 		"", // exchange
 		string(queue),
 		false, // mandatory
@@ -71,10 +135,6 @@ func Publish(queue config.QueueName, message interface{}) error {
 			Body:        body,
 		},
 	)
-	if err != nil {
-		return err
-	}
 
-	log.Printf("Sent message on queue %s", queue)
-	return nil
+	return err
 }

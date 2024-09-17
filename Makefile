@@ -14,10 +14,10 @@ docs:
 run: build
 	@./bin/approved
 
-run-dev: docs build 
+run-dev: docs build
 	@go run cmd/main.go
 
-build-image:
+build-image: docs
 	echo "Building ${IMAGE_NAME}:${IMAGE_TAG} image...";
 	docker image build -t ${IMAGE_NAME}:${IMAGE_TAG} .;
 	echo "Image ${IMAGE_NAME}:${IMAGE_TAG} built.";

@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"github.com/simondanielsson/apPRoved/cmd/internal/constants"
+	"github.com/simondanielsson/apPRoved/cmd/constants"
 )
 
 type User struct {

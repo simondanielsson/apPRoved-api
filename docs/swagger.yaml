@@ -187,6 +187,40 @@ paths:
       summary: Create repository
       tags:
       - reviews
+  /api/v1/repositories/{repositoryID}:
+    get:
+      consumes:
+      - application/json
+      description: Get a repository
+      parameters:
+      - description: Repository ID
+        in: path
+        name: repositoryID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get repository
+      tags:
+      - reviews
   /api/v1/repositories/{repositoryID}/pull-requests:
     get:
       consumes:
@@ -219,6 +253,45 @@ paths:
       security:
       - BearerAuth: []
       summary: Get pull requests
+      tags:
+      - reviews
+  /api/v1/repositories/{repositoryID}/pull-requests/{prID}:
+    get:
+      consumes:
+      - application/json
+      description: Get a pull request
+      parameters:
+      - description: Repository ID
+        in: path
+        name: repositoryID
+        required: true
+        type: string
+      - description: Pull request ID
+        in: path
+        name: prID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get pull request
       tags:
       - reviews
   /api/v1/repositories/{repositoryID}/pull-requests/{prID}/reviews:
@@ -328,8 +401,8 @@ paths:
       produces:
       - application/json
       responses:
-        "204":
-          description: No Content
+        "200":
+          description: OK
           schema:
             additionalProperties: true
             type: object
@@ -389,6 +462,50 @@ paths:
       security:
       - BearerAuth: []
       summary: Get review
+      tags:
+      - reviews
+  /api/v1/repositories/{repositoryID}/pull-requests/{prID}/reviews/{reviewID}/files:
+    get:
+      consumes:
+      - application/json
+      description: Get all file reviews for a review
+      parameters:
+      - description: Repository ID
+        in: path
+        name: repositoryID
+        required: true
+        type: string
+      - description: Pull request ID
+        in: path
+        name: prID
+        required: true
+        type: string
+      - description: Review ID
+        in: path
+        name: reviewID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get file reviews
       tags:
       - reviews
   /api/v1/repositories/{repositoryID}/pull-requests/{prID}/reviews/{reviewID}/progress:

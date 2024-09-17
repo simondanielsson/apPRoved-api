@@ -1,6 +1,7 @@
 server:
   bind_address:
   mode:
+  amqp_mode:
 
 database:
   host:
@@ -21,3 +22,8 @@ mq:
       exclusive: false
       no_wait: false
       args:
+
+pubsub:
+  project_id:
+  topics:
+    - review-file-diffs
