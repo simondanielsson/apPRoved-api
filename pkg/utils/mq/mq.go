@@ -31,7 +31,9 @@ func NewRabbitMQ(cfg interface{}) (*RabbitMQ, error) {
 	if err := queue.connect(); err != nil {
 		log.Fatalf("error initializing RabbitMQ: %v", err)
 	}
-	queue.declareQueues(cfgMQ)
+	if err := queue.declareQueues(cfgMQ); err != nil {
+		return nil, err
+	}
 
 	return queue, nil
 }
