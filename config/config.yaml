@@ -1,6 +1,7 @@
 server:
   bind_address:
   mode:
+  amqp_mode: rabbitmq
 
 database:
   host:
@@ -21,3 +22,6 @@ mq:
       exclusive: false
       no_wait: false
       args:
+
+pubsub:
+  project_id:

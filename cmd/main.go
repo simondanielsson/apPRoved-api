@@ -2,6 +2,9 @@ package main
 
 import (
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/simondanielsson/apPRoved/cmd/api"
 	"github.com/simondanielsson/apPRoved/cmd/config"
@@ -16,7 +19,6 @@ import (
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
-
 func main() {
 	config, err := config.LoadConfig()
 	if err != nil {
@@ -30,11 +32,32 @@ func main() {
 		log.Fatalf("could not connect to database %v\n", err)
 	}
 
-	if err := mq.InitRabbitMQ(config.MQ); err != nil {
-		log.Fatalf("could not connect to RabbitMQ")
+	messageQueue, err := mq.NewMessageQueue(config)
+	if err != nil {
+		log.Fatalf("could not connect to message queue: %v", err)
 	}
-	defer mq.CloseRabbitMQ()
+	defer messageQueue.Close()
 
-	server := api.NewAPIServer(config.Server, db)
+	server := api.NewAPIServer(config.Server, db, messageQueue)
+
+	gracefulShutdown(server, &messageQueue)
 	server.Run()
+}
+
+func gracefulShutdown(server *api.APIServer, queue *mq.MessageQueue) {
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+
+	go func() {
+		<-quit
+		log.Println("Shutting down server...")
+
+		(*queue).Close()
+
+		if err := server.Shutdown(); err != nil {
+			log.Fatalf("Failed to shutdown server: %v", err)
+		}
+
+		log.Println("Server stopped gracefully")
+	}()
 }

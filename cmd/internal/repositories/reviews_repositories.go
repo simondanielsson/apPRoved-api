@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/simondanielsson/apPRoved/cmd/internal/constants"
+	"github.com/simondanielsson/apPRoved/cmd/constants"
 	"github.com/simondanielsson/apPRoved/cmd/internal/models"
 	"gorm.io/gorm"
 )

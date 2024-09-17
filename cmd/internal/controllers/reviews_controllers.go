@@ -10,6 +10,7 @@ import (
 	"github.com/simondanielsson/apPRoved/cmd/internal/middlewares"
 	"github.com/simondanielsson/apPRoved/cmd/internal/services"
 	"github.com/simondanielsson/apPRoved/pkg/utils"
+	"github.com/simondanielsson/apPRoved/pkg/utils/mq"
 )
 
 type ReviewsController struct {
@@ -329,8 +330,13 @@ func (rc *ReviewsController) CreateReview(c *fiber.Ctx) error {
 
 	tx := db.GetDBTransaction(c)
 	userID := middlewares.GetUserID(c)
+	messageQueue, ok := c.Locals("messageQueue").(mq.MessageQueue)
+	if !ok {
+		return fiber.NewError(fiber.StatusInternalServerError, "Message queue not available")
+	}
+
 	ctx := context.Background()
-	review, err := rc.reviewsService.CreateReview(tx, ctx, repoID, prID, req.Name, userID)
+	review, err := rc.reviewsService.CreateReview(tx, ctx, messageQueue, repoID, prID, req.Name, userID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Could not create review",

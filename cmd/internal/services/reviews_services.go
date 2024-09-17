@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/simondanielsson/apPRoved/cmd/config"
-	"github.com/simondanielsson/apPRoved/cmd/internal/constants"
+	"github.com/simondanielsson/apPRoved/cmd/constants"
 	"github.com/simondanielsson/apPRoved/cmd/internal/dto/requests"
 	"github.com/simondanielsson/apPRoved/cmd/internal/dto/responses"
 	"github.com/simondanielsson/apPRoved/cmd/internal/models"
@@ -250,7 +250,7 @@ func (rs *ReviewsService) GetFileReviews(tx *gorm.DB, reviewID uint) (*responses
 	return response, nil
 }
 
-func (rs *ReviewsService) CreateReview(tx *gorm.DB, ctx context.Context, repoID, prID uint, name string, userID uint) (*responses.GetReviewsResponse, error) {
+func (rs *ReviewsService) CreateReview(tx *gorm.DB, ctx context.Context, queue mq.MessageQueue, repoID, prID uint, name string, userID uint) (*responses.GetReviewsResponse, error) {
 	repo, err := rs.reviewsRepository.GetRepository(tx, repoID)
 	if err != nil {
 		return nil, err
@@ -294,9 +294,7 @@ func (rs *ReviewsService) CreateReview(tx *gorm.DB, ctx context.Context, repoID,
 			ReviewID:       review.ID,
 			ReviewStatusID: reviewStatus.ID,
 		}
-		err = mq.Publish(config.QueueFileDiffs, &message)
-		if err != nil {
-			// Handle the error, e.g., log or retry
+		if err := queue.Publish(ctx, config.QueueFileDiffs, &message); err != nil {
 			log.Println("Error publishing to RabbitMQ:", err)
 			return
 		}

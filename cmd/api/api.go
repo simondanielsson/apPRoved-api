@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -9,6 +10,7 @@ import (
 	"github.com/simondanielsson/apPRoved/cmd/internal/middlewares"
 	"github.com/simondanielsson/apPRoved/cmd/internal/routes"
 	"github.com/simondanielsson/apPRoved/pkg/utils"
+	"github.com/simondanielsson/apPRoved/pkg/utils/mq"
 	"gorm.io/gorm"
 )
 
@@ -16,6 +18,7 @@ type APIServer struct {
 	config *config.ServerConfig
 	db     *gorm.DB
 	app    *fiber.App
+	queue  mq.MessageQueue
 }
 
 func (s *APIServer) Run() {
@@ -36,15 +39,25 @@ func (s *APIServer) setupRoutes() {
 	routes.RegisterRoutes(apiV1, controllers, opt_middlewares)
 }
 
-func NewAPIServer(cfg *config.ServerConfig, db *gorm.DB) *APIServer {
+func (s *APIServer) Shutdown() error {
+	fmt.Println("Shutting down server...")
+	if err := s.app.Shutdown(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func NewAPIServer(cfg *config.ServerConfig, db *gorm.DB, queue mq.MessageQueue) *APIServer {
 	server := &APIServer{
 		config: cfg,
 		db:     db,
 		app:    fiber.New(),
+		queue:  queue,
 	}
 
 	utils.ConfigureSwagger(server.app)
-	middlewares.SetupMiddlewares(server.app)
+	middlewares.SetupMiddlewares(server.app, queue)
 	server.setupRoutes()
 
 	return server
