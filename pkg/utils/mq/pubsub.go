@@ -13,8 +13,9 @@ import (
 
 type PubSub struct {
 	client      *pubsub.Client
+	topics      map[string]*pubsub.Topic
 	mutex       sync.Mutex
-	ProjectID   string
+	projectID   string
 	isConnected bool
 }
 
@@ -23,12 +24,19 @@ func NewPubSub(cfg interface{}) (*PubSub, error) {
 	cfgPB := cfg.(*config.PubSubConfig)
 
 	ps := &PubSub{
-		ProjectID: cfgPB.ProjectID,
+		projectID: cfgPB.ProjectID,
+		topics:    make(map[string]*pubsub.Topic),
 	}
 
 	if err := ps.connect(); err != nil {
 		return nil, fmt.Errorf("error initializing PubSub: %v", err)
 	}
+	for _, topicID := range cfgPB.Topics {
+		if err := ps.connectToTopic(topicID); err != nil {
+			return nil, fmt.Errorf("error initializing PubSub: %v", err)
+		}
+	}
+	fmt.Println("Connected to all declared topics")
 
 	return ps, nil
 }
@@ -37,14 +45,36 @@ func (ps *PubSub) connect() error {
 	ps.mutex.Lock()
 	defer ps.mutex.Unlock()
 
+	if ps.isConnected {
+		return nil
+	}
+
 	ctx := context.Background()
-	client, err := pubsub.NewClient(ctx, ps.ProjectID)
+	client, err := pubsub.NewClient(ctx, ps.projectID)
 	if err != nil {
 		return err
 	}
 
 	ps.client = client
 	ps.isConnected = true
+
+	return nil
+}
+
+func (ps *PubSub) connectToTopic(topicID string) error {
+	ps.mutex.Lock()
+	defer ps.mutex.Unlock()
+
+	if ps.client == nil {
+		return fmt.Errorf("tried to connect to a topic without a PubSub client")
+	}
+
+	topic := ps.client.Topic(topicID)
+	if topic == nil {
+		return fmt.Errorf("could not find topic %s", topicID)
+	}
+
+	ps.topics[topicID] = topic
 
 	return nil
 }
@@ -64,8 +94,14 @@ func (ps *PubSub) Publish(ctx context.Context, queue config.QueueName, message i
 	ps.mutex.Lock()
 	defer ps.mutex.Unlock()
 
-	topic := ps.client.Topic(string(queue))
-	defer topic.Stop()
+	if !ps.isConnected {
+		return fmt.Errorf("tried to publish to a PubSub that is not connected")
+	}
+
+	topic, exists := ps.topics[string(queue)]
+	if !exists {
+		return fmt.Errorf("topic %s not found in configuration", queue)
+	}
 
 	messageBytes, err := json.Marshal(message)
 	if err != nil {

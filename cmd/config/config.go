@@ -44,7 +44,8 @@ type RabbitMQConfig struct {
 }
 
 type PubSubConfig struct {
-	ProjectID string `mapstructure:"project_id"`
+	ProjectID string   `mapstructure:"project_id"`
+	Topics    []string `mapstructure:"topics"`
 }
 
 type Config struct {

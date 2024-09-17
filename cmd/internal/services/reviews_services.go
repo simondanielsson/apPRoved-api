@@ -281,21 +281,19 @@ func (rs *ReviewsService) CreateReview(tx *gorm.DB, ctx context.Context, queue m
 	// fetch file diffs for the PR from github using github client
 	// send info over RabbitMQ to call external review service api to retrieve file reviews
 	go func() {
-		// fetch file diffs for the PR from GitHub using the GitHub client
 		fileDiffs, err := utils.FetchFileDiffs(ctx, repo.Name, repo.Owner, pr.Number, userID)
 		if err != nil {
 			log.Println("Error fetching file diffs:", err)
 			return
 		}
 
-		// Publish a message to RabbitMQ
 		message := requests.FileDiffReviewRequest{
 			FileDiffs:      fileDiffs,
 			ReviewID:       review.ID,
 			ReviewStatusID: reviewStatus.ID,
 		}
 		if err := queue.Publish(ctx, config.QueueFileDiffs, &message); err != nil {
-			log.Println("Error publishing to RabbitMQ:", err)
+			log.Println("Error publishing to message queue:", err)
 			return
 		}
 	}()

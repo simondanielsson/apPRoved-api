@@ -1,7 +1,7 @@
 server:
   bind_address:
   mode:
-  amqp_mode: rabbitmq
+  amqp_mode:
 
 database:
   host:
@@ -25,3 +25,5 @@ mq:
 
 pubsub:
   project_id:
+  topics:
+    - review-file-diffs
