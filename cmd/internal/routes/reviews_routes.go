@@ -11,15 +11,19 @@ func RegisterReviewsRoutes(apiV1 fiber.Router, reviewsController *controllers.Re
 
 	router.Get("", reviewsController.GetRepositories)
 	router.Post("", reviewsController.RegisterRepository)
+	router.Get(":repositoryID", reviewsController.GetRepository)
 
 	router.Get("/:repositoryID/pull-requests", reviewsController.GetPullRequests)
 	router.Put("/:repositoryID/pull-requests/:prID", reviewsController.UpdatePullRequest)
+	router.Get("/:repositoryID/pull-requests/:prID", reviewsController.GetPullRequest)
 
 	router.Get("/:repositoryID/pull-requests/:prID/reviews", reviewsController.GetReviews)
-	router.Get("/:repositoryID/pull-requests/:prID/reviews/:reviewID", reviewsController.GetReview)
 	router.Post("/:repositoryID/pull-requests/:prID/reviews", reviewsController.CreateReview)
-	router.Get("/:repositoryID/pull-requests/:prID/reviews/:reviewID/progress", reviewsController.GetReviewProgress)
+	router.Get("/:repositoryID/pull-requests/:prID/reviews/:reviewID", reviewsController.GetReview)
 	router.Delete("/:repositoryID/pull-requests/:prID/reviews/:reviewID", reviewsController.DeleteReview)
+
+	router.Get("/:repositoryID/pull-requests/:prID/reviews/:reviewID/files", reviewsController.GetFileReviews)
+	router.Get("/:repositoryID/pull-requests/:prID/reviews/:reviewID/progress", reviewsController.GetReviewProgress)
 
 	apiV1.Post("/reviews/complete", opt_middlewares.Transaction, reviewsController.CompleteReview)
 }

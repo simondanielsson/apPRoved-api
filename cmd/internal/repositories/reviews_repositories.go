@@ -92,8 +92,19 @@ func (r *ReviewsRepository) GetReviews(tx *gorm.DB, repoID, prID uint) ([]*model
 	return reviews, nil
 }
 
-// GetReview returns a review
-func (r *ReviewsRepository) GetReview(tx *gorm.DB, reviewID uint) (*models.Review, error) {
+// GetReview returns a review for a pull request
+func (r *ReviewsRepository) GetReview(tx *gorm.DB, repoID, prID, reviewID uint) (*models.Review, error) {
+	var review models.Review
+
+	if err := tx.Model(&models.Review{}).Where(&models.Review{PullRequestID: prID, ID: reviewID}).First(&review).Error; err != nil {
+		return nil, err
+	}
+
+	return &review, nil
+}
+
+// GetFileReviews returns reviews for files
+func (r *ReviewsRepository) GetFileReviews(tx *gorm.DB, reviewID uint) (*models.Review, error) {
 	var review models.Review
 
 	if err := tx.Model(&models.Review{}).Preload("FileReviews").Where(&models.Review{ID: reviewID}).First(&review).Error; err != nil {

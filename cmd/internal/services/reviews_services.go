@@ -79,6 +79,24 @@ func (rs *ReviewsService) RegisterRepository(ctx context.Context, tx *gorm.DB, u
 	return response, nil
 }
 
+func (rs *ReviewsService) GetRepository(tx *gorm.DB, repoID uint) (*responses.GetRepositoriesResponse, error) {
+	repo, err := rs.reviewsRepository.GetRepository(tx, repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &responses.GetRepositoriesResponse{
+		ID:        repo.ID,
+		Name:      repo.Name,
+		Owner:     repo.Owner,
+		URL:       repo.URL,
+		CreatedAt: repo.CreatedAt,
+		UpdatedAt: repo.UpdatedAt,
+	}
+
+	return response, nil
+}
+
 func (rs *ReviewsService) findPullRequests(ctx context.Context, repo *models.Repository, userID uint) ([]*models.PullRequest, error) {
 	fetched_prs, err := utils.ListPullRequests(ctx, repo.Name, repo.Owner, userID)
 	if err != nil {
@@ -123,6 +141,25 @@ func (rs *ReviewsService) GetPullRequests(tx *gorm.DB, userID, repoID uint) ([]*
 	return prsResponse, nil
 }
 
+// GetPullRequest returns a pull request
+func (rs *ReviewsService) GetPullRequest(tx *gorm.DB, repoID, prID uint) (*responses.GetPullRequestResponse, error) {
+	pr, err := rs.reviewsRepository.GetPullRequest(tx, prID)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &responses.GetPullRequestResponse{
+		ID:        pr.ID,
+		Number:    pr.Number,
+		Title:     pr.Title,
+		URL:       pr.URL,
+		State:     pr.State,
+		CreatedAt: pr.CreatedAt,
+		UpdatedAt: pr.UpdatedAt,
+	}
+	return response, nil
+}
+
 // GetReviews returns all reviews for a pull request
 func (rs *ReviewsService) GetReviews(tx *gorm.DB, repoID, prID uint) ([]*responses.GetReviewsResponse, error) {
 	reviews, err := rs.reviewsRepository.GetReviews(tx, repoID, prID)
@@ -162,9 +199,33 @@ func (rs *ReviewsService) GetReviews(tx *gorm.DB, repoID, prID uint) ([]*respons
 	return reviewResponse, nil
 }
 
-// GetReview returns a review
-func (rs *ReviewsService) GetReview(tx *gorm.DB, reviewID uint) (*responses.GetReviewResponse, error) {
-	review, err := rs.reviewsRepository.GetReview(tx, reviewID)
+// GEtReview returns a review
+func (rs *ReviewsService) GetReview(tx *gorm.DB, repoID, prID, reviewID uint) (*responses.GetReviewsResponse, error) {
+	review, err := rs.reviewsRepository.GetReview(tx, repoID, prID, reviewID)
+	if err != nil {
+		return nil, err
+	}
+
+	reviewStatus, err := rs.reviewsRepository.GetReviewStatus(tx, reviewID)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &responses.GetReviewsResponse{
+		ID:        review.ID,
+		Title:     review.Name,
+		Status:    reviewStatus.Status,
+		Progress:  reviewStatus.Progress,
+		CreatedAt: review.CreatedAt,
+		UpdatedAt: review.UpdatedAt,
+	}
+
+	return response, nil
+}
+
+// GetFileReviews returns files for a review
+func (rs *ReviewsService) GetFileReviews(tx *gorm.DB, reviewID uint) (*responses.GetReviewResponse, error) {
+	review, err := rs.reviewsRepository.GetFileReviews(tx, reviewID)
 	if err != nil {
 		return nil, err
 	}

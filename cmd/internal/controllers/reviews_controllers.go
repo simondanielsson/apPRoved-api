@@ -16,6 +16,7 @@ type ReviewsController struct {
 	reviewsService *services.ReviewsService
 }
 
+// NewReviewsController creates a new reviews controller
 func NewReviewsController(reviewsService *services.ReviewsService) *ReviewsController {
 	return &ReviewsController{reviewsService: reviewsService}
 }
@@ -78,6 +79,37 @@ func (rc *ReviewsController) RegisterRepository(c *fiber.Ctx) error {
 	})
 }
 
+// @Summary Get repository
+// @Description Get a repository
+// @Tags reviews
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param        repositoryID  path  string  true  "Repository ID"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /api/v1/repositories/{repositoryID} [get]
+func (rc *ReviewsController) GetRepository(c *fiber.Ctx) error {
+	repoID, err := utils.ReadUintPathParam(c, "repositoryID")
+	if err != nil {
+		return err
+	}
+
+	tx := db.GetDBTransaction(c)
+
+	repo, err := rc.reviewsService.GetRepository(tx, repoID)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Repository not found", "error": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Repository fetched successfully",
+		"data":    repo,
+	})
+}
+
 // generate swagger docs
 // @Summary Get pull requests
 // @Description Get all pull requests for repository
@@ -116,7 +148,43 @@ func (rc *ReviewsController) UpdatePullRequest(c *fiber.Ctx) error {
 	return c.SendString("UpdatePullRequest")
 }
 
-// generate swagger docs
+// @Summary Get pull request
+// @Description Get a pull request
+// @Tags reviews
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param        repositoryID  path  string  true  "Repository ID"
+// @Param        prID          path  string  true  "Pull request ID"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /api/v1/repositories/{repositoryID}/pull-requests/{prID} [get]
+func (rc *ReviewsController) GetPullRequest(c *fiber.Ctx) error {
+	repoID, err := utils.ReadUintPathParam(c, "repositoryID")
+	if err != nil {
+		return err
+	}
+
+	prID, err := utils.ReadUintPathParam(c, "prID")
+	if err != nil {
+		return err
+	}
+
+	tx := db.GetDBTransaction(c)
+	pr, err := rc.reviewsService.GetPullRequest(tx, repoID, prID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Could not fetch pull request",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Successfully fetched pull request",
+		"data":    pr,
+	})
+} // generate swagger docs
 // @Summary Get reviews
 // @Description Get all reviews for a pull request
 // @Tags reviews
@@ -154,7 +222,6 @@ func (rc *ReviewsController) GetReviews(c *fiber.Ctx) error {
 	})
 }
 
-// generate swagger docs
 // @Summary Get review
 // @Description Get a review
 // @Tags reviews
@@ -169,13 +236,56 @@ func (rc *ReviewsController) GetReviews(c *fiber.Ctx) error {
 // @Failure      500  {object}  map[string]interface{}
 // @Router       /api/v1/repositories/{repositoryID}/pull-requests/{prID}/reviews/{reviewID} [get]
 func (rc *ReviewsController) GetReview(c *fiber.Ctx) error {
+	repoID, err := utils.ReadUintPathParam(c, "repositoryID")
+	if err != nil {
+		return err
+	}
+	prID, err := utils.ReadUintPathParam(c, "prID")
+	if err != nil {
+		return err
+	}
 	reviewID, err := utils.ReadUintPathParam(c, "reviewID")
 	if err != nil {
 		return err
 	}
 
 	tx := db.GetDBTransaction(c)
-	reviewResponse, err := rc.reviewsService.GetReview(tx, reviewID)
+	review, err := rc.reviewsService.GetReview(tx, repoID, prID, reviewID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Could not fetch review",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Successfully fetched review",
+		"data":    review,
+	})
+}
+
+// generate swagger docs
+// @Summary Get file reviews
+// @Description Get all file reviews for a review
+// @Tags reviews
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param        repositoryID  path  string  true  "Repository ID"
+// @Param        prID          path  string  true  "Pull request ID"
+// @Param        reviewID  path  string  true  "Review ID"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /api/v1/repositories/{repositoryID}/pull-requests/{prID}/reviews/{reviewID}/files [get]
+func (rc *ReviewsController) GetFileReviews(c *fiber.Ctx) error {
+	reviewID, err := utils.ReadUintPathParam(c, "reviewID")
+	if err != nil {
+		return err
+	}
+
+	tx := db.GetDBTransaction(c)
+	reviewResponse, err := rc.reviewsService.GetFileReviews(tx, reviewID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Could not fetch review",
