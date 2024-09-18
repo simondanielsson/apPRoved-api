@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"log"
+	"net"
 
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
 	"github.com/gofiber/fiber/v2"
@@ -19,7 +20,13 @@ func NewDB(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 	case "pgx":
 		dsn = fmt.Sprintf("postgres://%s:%s@%s:%d/%s", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName)
 	case "cloudsqlpostgres":
-		dsn = fmt.Sprintf("host=%s user=%s dbname=%s password=%s sslmode=disable", cfg.Host, cfg.User, cfg.DBName, cfg.Password)
+		var host string
+		if isIP(cfg.Host) {
+			host = fmt.Sprintf("[%s]", cfg.Host)
+		} else {
+			host = cfg.Host
+		}
+		dsn = fmt.Sprintf("host=%s user=%s dbname=%s password=%s sslmode=disable", host, cfg.User, cfg.DBName, cfg.Password)
 	default:
 		log.Fatalf("unsupported driver name: %s", cfg.DriverName)
 	}
@@ -57,4 +64,8 @@ func GetDBTransaction(c *fiber.Ctx) *gorm.DB {
 		panic("no transaction found in context, did you forget to wrap the route in a transaction middleware?")
 	}
 	return tx
+}
+
+func isIP(host string) bool {
+	return net.ParseIP(host) != nil
 }
