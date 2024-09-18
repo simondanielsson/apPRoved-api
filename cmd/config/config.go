@@ -18,11 +18,12 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	Host     string `mapstructure:"host"`
-	Port     int    `mapstructure:"port"`
-	User     string `mapstructure:"user"`
-	Password string `mapstructure:"password"`
-	DBName   string `mapstructure:"dbname"`
+	Host       string `mapstructure:"host"`
+	Port       int    `mapstructure:"port"`
+	User       string `mapstructure:"user"`
+	Password   string `mapstructure:"password"`
+	DBName     string `mapstructure:"dbname"`
+	DriverName string `mapstructure:"driver_name"`
 }
 
 type JWTConfig struct {
@@ -117,6 +118,7 @@ func parseEnvironmentVariables() {
 	customerrors.IgnoreError(viper.BindEnv("database.host", "POSTGRES_HOST"))
 	customerrors.IgnoreError(viper.BindEnv("database.port", "POSTGRES_PORT"))
 	customerrors.IgnoreError(viper.BindEnv("database.dbname", "POSTGRES_DBNAME"))
+	customerrors.IgnoreError(viper.BindEnv("database.driver_name", "DRIVER_NAME"))
 
 	customerrors.IgnoreError(viper.BindEnv("jwt.secret", "JWT_KEY"))
 	customerrors.IgnoreError(viper.BindEnv("mq.url", "AMQP_URL"))

@@ -9,6 +9,7 @@ database:
   user:
   password:
   dbname:
+  driver_name:
 
 jwt:
   secret:
