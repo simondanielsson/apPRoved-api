@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path"
@@ -66,7 +67,7 @@ func LoadConfig() (*Config, error) {
 
 	log.Printf("loading config from %s\n", envFile)
 	if err := godotenv.Load(envFile); err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+		fmt.Printf("Error loading .env file: %v. Assuming environment variables are set otherwise.\n", err)
 	}
 
 	viper.SetConfigFile(path.Join("config", "config.yaml"))
