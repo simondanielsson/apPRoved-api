@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
@@ -38,7 +39,12 @@ func main() {
 	}
 	defer messageQueue.Close()
 
-	server := api.NewAPIServer(config.Server, db, messageQueue)
+	githubClient, err := utils.NewGithubClient(context.Background())
+	if err != nil {
+		log.Fatalf("could not create github client: %v", err)
+	}
+
+	server := api.NewAPIServer(config.Server, db, messageQueue, githubClient)
 
 	gracefulShutdown(server, &messageQueue)
 	server.Run()
