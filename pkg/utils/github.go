@@ -39,13 +39,13 @@ func NewGithubClient(ctx context.Context) (*GithubClient, error) {
 	}
 
 	if err := client.connect(ctx); err != nil {
-		return nil, fmt.Errorf("Failed to initialize GitHub client")
+		return nil, fmt.Errorf("failed to initialize GitHub client")
 	}
 
 	return &client, nil
 }
 
-func (c GithubClient) connect(ctx context.Context) error {
+func (c *GithubClient) connect(ctx context.Context) error {
 	token := os.Getenv("GITHUB_TOKEN")
 	if token == "" {
 		log.Fatalf("GITHUB_TOKEN is not set")
@@ -68,7 +68,7 @@ func (c GithubClient) connect(ctx context.Context) error {
 	return nil
 }
 
-func (c GithubClient) ListPullRequests(ctx context.Context, repoName, repoOwner string, userID uint) ([]*GithubPullRequest, error) {
+func (c *GithubClient) ListPullRequests(ctx context.Context, repoName, repoOwner string, userID uint) ([]*GithubPullRequest, error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -124,7 +124,7 @@ func (c GithubClient) ListPullRequests(ctx context.Context, repoName, repoOwner 
 	return prs, nil
 }
 
-func (c GithubClient) FetchFileDiffs(ctx context.Context, repoName, repoOwner string, prNumber uint, userID uint) ([]*GithubPullRequestFileChanges, error) {
+func (c *GithubClient) FetchFileDiffs(ctx context.Context, repoName, repoOwner string, prNumber uint, userID uint) ([]*GithubPullRequestFileChanges, error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -137,7 +137,7 @@ func (c GithubClient) FetchFileDiffs(ctx context.Context, repoName, repoOwner st
 	for _, file := range files {
 		diff := &GithubPullRequestFileChanges{
 			Filename:  *file.Filename,
-			Patch:     *file.Patch,
+			Patch:     SafeString(file.Patch, "Cannot display patch for binary file"),
 			Additions: *file.Additions,
 			Deletions: *file.Deletions,
 			Changes:   *file.Changes,

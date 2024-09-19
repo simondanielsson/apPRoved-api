@@ -118,6 +118,6 @@ func (ps *PubSub) Publish(ctx context.Context, queue config.QueueName, message i
 	if err != nil {
 		return err
 	}
-	log.Printf("Published a message; msg ID: %v\n", id)
+	log.Printf("Published a message to topic %s; msg ID: %v\n", queue, id)
 	return nil
 }
