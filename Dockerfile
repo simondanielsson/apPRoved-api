@@ -6,8 +6,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . ./
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o bin/approved cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o bin/api cmd/main.go
 
 EXPOSE 8090
 
-CMD ["./bin/approved"]
+CMD ["./bin/api"]
