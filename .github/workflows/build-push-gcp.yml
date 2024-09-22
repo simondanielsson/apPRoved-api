@@ -1,0 +1,40 @@
+name: Build and Push Docker Image to GCP Artifact Registry
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    env:
+      APP_NAME: approved-api-prod
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      GCP_ARTIFACT_REPOSITORY_REGION: ${{ secrets.GCP_ARTIFACT_REPOSITORY_REGION }}
+      GCP_REPOSITORY_NAME: ${{ secrets.GCP_REPOSITORY_NAME }}
+      IMAGE_TAG: ${{ github.sha }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          export_default_credentials: true
+
+      - name: Configure Docker to use GCP Artifact Registry
+        run: gcloud auth configure-docker
+
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{ env.GCP_ARTIFACT_REPOSITORY_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_REPOSITORY_NAME }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }} .
+
+      - name: Push Docker Image to GCP Artifact Registry
+        run: |
+          docker push ${{ env.GCP_ARTIFACT_REPOSITORY_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.GCP_REPOSITORY_NAME }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
