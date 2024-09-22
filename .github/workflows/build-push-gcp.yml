@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
@@ -14,6 +16,8 @@ jobs:
     env:
       APP_NAME: approved-api-prod
       IMAGE_TAG: ${{ github.sha }}
+      REGION_REPO: ${{ secrets.GCP_ARTIFACT_REPOSITORY_REGION }}-docker.pkg.dev
+      IMAGE_NAME: ${{ env.REGION_REPO }}/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY_NAME }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
 
     steps:
       - name: Checkout code
@@ -29,13 +33,17 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
+      - name: "Use gcloud CLI"
+        run: "gcloud info"
+
       - name: Configure Docker to use GCP Artifact Registry
-        run: gcloud auth configure-docker
+        run: |
+          gcloud auth configure-docker ${{ env.REGION_REPO }}
 
       - name: Build Docker Image
         run: |
-          docker build -t ${{ secrets.GCP_ARTIFACT_REPOSITORY_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY_NAME }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }} .
+          docker build -t ${{ env.IMAGE_NAME }} .
 
       - name: Push Docker Image to GCP Artifact Registry
         run: |
-          docker push ${{ secrets.GCP_ARTIFACT_REPOSITORY_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY_NAME }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
+          docker push ${{ env.IMAGE_NAME }}
