@@ -25,5 +25,7 @@ func RegisterReviewsRoutes(apiV1 fiber.Router, reviewsController *controllers.Re
 	router.Get("/:repositoryID/pull-requests/:prID/reviews/:reviewID/files", reviewsController.GetFileReviews)
 	router.Get("/:repositoryID/pull-requests/:prID/reviews/:reviewID/progress", reviewsController.GetReviewProgress)
 
+	// used by LLM service
 	apiV1.Post("/reviews/complete", opt_middlewares.Transaction, reviewsController.CompleteReview)
+	apiV1.Put("/review-status/:reviewStatusID", opt_middlewares.Transaction, reviewsController.UpdateReviewProgress)
 }

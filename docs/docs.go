@@ -788,6 +788,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/review-status/{reviewStatusID}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update review progress",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reviews"
+                ],
+                "summary": "Update review progress",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Review Status ID",
+                        "name": "reviewStatusID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update review progress request",
+                        "name": "updateReviewRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/requests.UpdateReviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/reviews/complete": {
             "post": {
                 "description": "Complete a review",
@@ -905,6 +966,19 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "constants.ReviewStatus": {
+            "type": "string",
+            "enum": [
+                "queued",
+                "processing",
+                "available"
+            ],
+            "x-enum-varnames": [
+                "StatusQueued",
+                "StatusProcessing",
+                "StatusAvailable"
+            ]
+        },
         "requests.CompleteReviewRequest": {
             "type": "object",
             "properties": {
@@ -955,6 +1029,17 @@ const docTemplate = `{
                 },
                 "patch": {
                     "type": "string"
+                }
+            }
+        },
+        "requests.UpdateReviewRequest": {
+            "type": "object",
+            "properties": {
+                "progress": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/constants.ReviewStatus"
                 }
             }
         }

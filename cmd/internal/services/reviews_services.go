@@ -353,3 +353,15 @@ func (rs *ReviewsService) GetReviewStatus(tx *gorm.DB, repoID, prID, reviewID ui
 
 	return reviewStatus, nil
 }
+
+func (rs *ReviewsService) UpdateReviewStatus(tx *gorm.DB, reviewStatusID uint, status constants.ReviewStatus, progress int) error {
+	if err := rs.reviewsRepository.UpdateReviewStatus(tx, reviewStatusID, status); err != nil {
+		return err
+	}
+
+	if err := rs.reviewsRepository.UpdateReviewProgress(tx, reviewStatusID, progress); err != nil {
+		return err
+	}
+
+	return nil
+}

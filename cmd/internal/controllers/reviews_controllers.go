@@ -478,3 +478,39 @@ func (rc *ReviewsController) GetReviewProgress(c *fiber.Ctx) error {
 		},
 	})
 }
+
+// generate swagger docs
+// @Summary Update review progress
+// @Description Update review progress
+// @Tags reviews
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param        reviewStatusID  path  string  true  "Review Status ID"
+// @Param        updateReviewRequest  body  requests.UpdateReviewRequest  true  "Update review progress request"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /api/v1/review-status/{reviewStatusID} [put]
+func (rc *ReviewsController) UpdateReviewProgress(c *fiber.Ctx) error {
+	reviewStatusID, err := utils.ReadUintPathParam(c, "reviewStatusID")
+	if err != nil {
+		return err
+	}
+	var request requests.UpdateReviewRequest
+	if err := c.BodyParser(&request); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Could not parse request body"})
+	}
+
+	tx := db.GetDBTransaction(c)
+	if err := rc.reviewsService.UpdateReviewStatus(tx, reviewStatusID, request.Status, request.Progress); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Could not update review progress",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Updated progress successfully.",
+	})
+}

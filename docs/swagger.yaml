@@ -1,4 +1,14 @@
 definitions:
+  constants.ReviewStatus:
+    enum:
+    - queued
+    - processing
+    - available
+    type: string
+    x-enum-varnames:
+    - StatusQueued
+    - StatusProcessing
+    - StatusAvailable
   requests.CompleteReviewRequest:
     properties:
       file_reviews:
@@ -32,6 +42,13 @@ definitions:
         type: string
       patch:
         type: string
+    type: object
+  requests.UpdateReviewRequest:
+    properties:
+      progress:
+        type: integer
+      status:
+        $ref: '#/definitions/constants.ReviewStatus'
     type: object
 info:
   contact: {}
@@ -550,6 +567,46 @@ paths:
       security:
       - BearerAuth: []
       summary: Get review progress
+      tags:
+      - reviews
+  /api/v1/review-status/{reviewStatusID}:
+    put:
+      consumes:
+      - application/json
+      description: Update review progress
+      parameters:
+      - description: Review Status ID
+        in: path
+        name: reviewStatusID
+        required: true
+        type: string
+      - description: Update review progress request
+        in: body
+        name: updateReviewRequest
+        required: true
+        schema:
+          $ref: '#/definitions/requests.UpdateReviewRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update review progress
       tags:
       - reviews
   /api/v1/reviews/complete:
