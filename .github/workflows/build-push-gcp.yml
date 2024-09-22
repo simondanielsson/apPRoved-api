@@ -14,10 +14,9 @@ jobs:
     environment: approved-gcp
 
     env:
-      APP_NAME: approved-api-prod
       IMAGE_TAG: ${{ github.sha }}
       REGION_REPO: ${{ secrets.GCP_ARTIFACT_REPOSITORY_REGION }}-docker.pkg.dev
-      IMAGE_NAME: ${{ secrets.GCP_ARTIFACT_REPOSITORY_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY_NAME }}/${{ env.APP_NAME }}:${{ env.IMAGE_TAG }}
+      IMAGE_NAME: ${{ secrets.GCP_ARTIFACT_REPOSITORY_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY_NAME }}/approved-api-prod:${{ github.sha }}
 
     steps:
       - name: Checkout code
