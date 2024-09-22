@@ -47,7 +47,7 @@ func (rs *ReviewsService) GetRepositories(tx *gorm.DB, userID uint) ([]*response
 }
 
 // RegisterRepository registers a new repository and its pull requests
-func (rs *ReviewsService) RegisterRepository(ctx context.Context, tx *gorm.DB, userID uint, name, owner, url string) (*responses.GetRepositoriesResponse, error) {
+func (rs *ReviewsService) RegisterRepository(ctx context.Context, tx *gorm.DB, githubClient utils.GithubClient, userID uint, name, owner, url string) (*responses.GetRepositoriesResponse, error) {
 	repo := &models.Repository{
 		UserID: userID,
 		Name:   name,
@@ -59,7 +59,7 @@ func (rs *ReviewsService) RegisterRepository(ctx context.Context, tx *gorm.DB, u
 		return nil, err
 	}
 
-	prs, err := rs.findPullRequests(ctx, repo, userID)
+	prs, err := rs.findPullRequests(ctx, githubClient, repo, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -97,8 +97,8 @@ func (rs *ReviewsService) GetRepository(tx *gorm.DB, repoID uint) (*responses.Ge
 	return response, nil
 }
 
-func (rs *ReviewsService) findPullRequests(ctx context.Context, repo *models.Repository, userID uint) ([]*models.PullRequest, error) {
-	fetched_prs, err := utils.ListPullRequests(ctx, repo.Name, repo.Owner, userID)
+func (rs *ReviewsService) findPullRequests(ctx context.Context, githubClient utils.GithubClient, repo *models.Repository, userID uint) ([]*models.PullRequest, error) {
+	fetched_prs, err := githubClient.ListPullRequests(ctx, repo.Name, repo.Owner, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +250,7 @@ func (rs *ReviewsService) GetFileReviews(tx *gorm.DB, reviewID uint) (*responses
 	return response, nil
 }
 
-func (rs *ReviewsService) CreateReview(tx *gorm.DB, ctx context.Context, queue mq.MessageQueue, repoID, prID uint, name string, userID uint) (*responses.GetReviewsResponse, error) {
+func (rs *ReviewsService) CreateReview(tx *gorm.DB, ctx context.Context, queue mq.MessageQueue, githubClient utils.GithubClient, repoID, prID uint, name string, userID uint) (*responses.GetReviewsResponse, error) {
 	repo, err := rs.reviewsRepository.GetRepository(tx, repoID)
 	if err != nil {
 		return nil, err
@@ -281,7 +281,7 @@ func (rs *ReviewsService) CreateReview(tx *gorm.DB, ctx context.Context, queue m
 	// fetch file diffs for the PR from github using github client
 	// send info over RabbitMQ to call external review service api to retrieve file reviews
 	go func() {
-		fileDiffs, err := utils.FetchFileDiffs(ctx, repo.Name, repo.Owner, pr.Number, userID)
+		fileDiffs, err := githubClient.FetchFileDiffs(ctx, repo.Name, repo.Owner, pr.Number, userID)
 		if err != nil {
 			log.Println("Error fetching file diffs:", err)
 			return

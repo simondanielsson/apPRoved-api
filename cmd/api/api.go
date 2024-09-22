@@ -15,10 +15,11 @@ import (
 )
 
 type APIServer struct {
-	config *config.ServerConfig
-	db     *gorm.DB
-	app    *fiber.App
-	queue  mq.MessageQueue
+	config       *config.ServerConfig
+	db           *gorm.DB
+	app          *fiber.App
+	queue        mq.MessageQueue
+	githubClient *utils.GithubClient
 }
 
 func (s *APIServer) Run() {
@@ -48,16 +49,17 @@ func (s *APIServer) Shutdown() error {
 	return nil
 }
 
-func NewAPIServer(cfg *config.ServerConfig, db *gorm.DB, queue mq.MessageQueue) *APIServer {
+func NewAPIServer(cfg *config.ServerConfig, db *gorm.DB, queue mq.MessageQueue, githubClient *utils.GithubClient) *APIServer {
 	server := &APIServer{
-		config: cfg,
-		db:     db,
-		app:    fiber.New(),
-		queue:  queue,
+		config:       cfg,
+		db:           db,
+		app:          fiber.New(),
+		queue:        queue,
+		githubClient: githubClient,
 	}
 
 	utils.ConfigureSwagger(server.app)
-	middlewares.SetupMiddlewares(server.app, queue)
+	middlewares.SetupMiddlewares(server.app, queue, githubClient)
 	server.setupRoutes()
 
 	return server

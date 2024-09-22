@@ -6,6 +6,8 @@ services:
     container_name: approved-api
     environment:
       - APP_ENV=production
+    env_file:
+      - .env.production
     depends_on:
       postgres:
         condition: service_healthy
@@ -15,6 +17,8 @@ services:
       - "8090:8090"
     networks:
       - app-network
+    volumes:
+      - ./credentials/key.json:/app/credentials/key.json
 
   postgres:
     image: postgres:16
@@ -54,11 +58,15 @@ services:
     container_name: approved-llm
     environment:
       - APP_ENV=production
+    env_file:
+      - .env.approved-llm
     depends_on:
       rabbitmq:
         condition: service_healthy
     networks:
       - app-network
+    volumes:
+      - ./credentials/key.json:/app/credentials/key.json
 
   frontend:
     image: approved-frontend:latest

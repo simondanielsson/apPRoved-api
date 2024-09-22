@@ -2,35 +2,14 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/google/go-github/v64/github"
 	"golang.org/x/oauth2"
 )
-
-func initGithubClient(ctx context.Context, userID uint) *github.Client {
-	token := os.Getenv("GITHUB_TOKEN")
-	if token == "" {
-		log.Fatalf("GITHUB_TOKEN is not set")
-	}
-
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: token},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-	if tc == nil {
-		log.Fatalf("Failed to initialize OAuth2 client for user %d", userID)
-	}
-
-	client := github.NewClient(tc)
-	if client == nil {
-		log.Fatalf("Failed to initialize GitHub client for user %d", userID)
-	}
-
-	log.Printf("Initialized GitHub client for user %d", userID)
-	return client
-}
 
 type GithubPullRequest struct {
 	Number     uint
@@ -48,8 +27,51 @@ type GithubPullRequestFileChanges struct {
 	Changes   int    `json:"changes"`
 }
 
-func ListPullRequests(ctx context.Context, repoName, repoOwner string, userID uint) ([]*GithubPullRequest, error) {
-	client := initGithubClient(ctx, userID)
+type GithubClient struct {
+	client *github.Client
+	mutex  *sync.Mutex
+}
+
+func NewGithubClient(ctx context.Context) (*GithubClient, error) {
+	client := GithubClient{
+		client: nil,
+		mutex:  &sync.Mutex{},
+	}
+
+	if err := client.connect(ctx); err != nil {
+		return nil, fmt.Errorf("failed to initialize GitHub client")
+	}
+
+	return &client, nil
+}
+
+func (c *GithubClient) connect(ctx context.Context) error {
+	token := os.Getenv("GITHUB_TOKEN")
+	if token == "" {
+		log.Fatalf("GITHUB_TOKEN is not set")
+	}
+
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: token},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+	if tc == nil {
+		log.Fatal("Failed to initialize OAuth2 client")
+	}
+
+	c.client = github.NewClient(tc)
+	if c.client == nil {
+		log.Fatalf("Failed to initialize GitHub client")
+	}
+
+	log.Printf("Initialized GitHub client")
+	return nil
+}
+
+func (c *GithubClient) ListPullRequests(ctx context.Context, repoName, repoOwner string, userID uint) ([]*GithubPullRequest, error) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	log.Printf("Fetching PRs for %s/%s", repoOwner, repoName)
 	// fetch PR's by page
 	opts := &github.PullRequestListOptions{
@@ -59,7 +81,7 @@ func ListPullRequests(ctx context.Context, repoName, repoOwner string, userID ui
 
 	var prs []*GithubPullRequest
 	for {
-		fetched_prs, resp, err := client.PullRequests.List(ctx, repoOwner, repoName, opts)
+		fetched_prs, resp, err := c.client.PullRequests.List(ctx, repoOwner, repoName, opts)
 		if err != nil {
 			if r, _ := err.(*github.ErrorResponse); r.Response.StatusCode == 404 {
 				fetched_prs = []*github.PullRequest{}
@@ -75,7 +97,7 @@ func ListPullRequests(ctx context.Context, repoName, repoOwner string, userID ui
 			}
 			uint_number := uint(number)
 
-			commits, _, err := client.PullRequests.ListCommits(ctx, repoOwner, repoName, *pr.Number, nil)
+			commits, _, err := c.client.PullRequests.ListCommits(ctx, repoOwner, repoName, *pr.Number, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -102,10 +124,11 @@ func ListPullRequests(ctx context.Context, repoName, repoOwner string, userID ui
 	return prs, nil
 }
 
-func FetchFileDiffs(ctx context.Context, repoName, repoOwner string, prNumber uint, userID uint) ([]*GithubPullRequestFileChanges, error) {
-	client := initGithubClient(ctx, userID)
+func (c *GithubClient) FetchFileDiffs(ctx context.Context, repoName, repoOwner string, prNumber uint, userID uint) ([]*GithubPullRequestFileChanges, error) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
-	files, _, err := client.PullRequests.ListFiles(ctx, repoOwner, repoName, int(prNumber), nil)
+	files, _, err := c.client.PullRequests.ListFiles(ctx, repoOwner, repoName, int(prNumber), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +137,7 @@ func FetchFileDiffs(ctx context.Context, repoName, repoOwner string, prNumber ui
 	for _, file := range files {
 		diff := &GithubPullRequestFileChanges{
 			Filename:  *file.Filename,
-			Patch:     *file.Patch,
+			Patch:     SafeString(file.Patch, "Cannot display patch for binary file"),
 			Additions: *file.Additions,
 			Deletions: *file.Deletions,
 			Changes:   *file.Changes,

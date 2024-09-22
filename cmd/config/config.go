@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path"
@@ -18,11 +19,12 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	Host     string `mapstructure:"host"`
-	Port     int    `mapstructure:"port"`
-	User     string `mapstructure:"user"`
-	Password string `mapstructure:"password"`
-	DBName   string `mapstructure:"dbname"`
+	Host       string `mapstructure:"host"`
+	Port       int    `mapstructure:"port"`
+	User       string `mapstructure:"user"`
+	Password   string `mapstructure:"password"`
+	DBName     string `mapstructure:"dbname"`
+	DriverName string `mapstructure:"driver_name"`
 }
 
 type JWTConfig struct {
@@ -65,7 +67,7 @@ func LoadConfig() (*Config, error) {
 
 	log.Printf("loading config from %s\n", envFile)
 	if err := godotenv.Load(envFile); err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+		fmt.Printf("Error loading .env file: %v. Assuming environment variables are set otherwise.\n", err)
 	}
 
 	viper.SetConfigFile(path.Join("config", "config.yaml"))
@@ -117,6 +119,7 @@ func parseEnvironmentVariables() {
 	customerrors.IgnoreError(viper.BindEnv("database.host", "POSTGRES_HOST"))
 	customerrors.IgnoreError(viper.BindEnv("database.port", "POSTGRES_PORT"))
 	customerrors.IgnoreError(viper.BindEnv("database.dbname", "POSTGRES_DBNAME"))
+	customerrors.IgnoreError(viper.BindEnv("database.driver_name", "DRIVER_NAME"))
 
 	customerrors.IgnoreError(viper.BindEnv("jwt.secret", "JWT_KEY"))
 	customerrors.IgnoreError(viper.BindEnv("mq.url", "AMQP_URL"))

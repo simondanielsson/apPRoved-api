@@ -69,7 +69,12 @@ func (rc *ReviewsController) RegisterRepository(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Could not parse request body"})
 	}
 
-	repo, err := rc.reviewsService.RegisterRepository(ctx, tx, userID, req.Name, req.Owner, req.URL)
+	githubClient, ok := c.Locals("githubClient").(utils.GithubClient)
+	if !ok {
+		return fiber.NewError(fiber.StatusInternalServerError, "Github client not available")
+	}
+
+	repo, err := rc.reviewsService.RegisterRepository(ctx, tx, githubClient, userID, req.Name, req.Owner, req.URL)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not create repository", "error": err.Error()})
 	}
@@ -334,9 +339,13 @@ func (rc *ReviewsController) CreateReview(c *fiber.Ctx) error {
 	if !ok {
 		return fiber.NewError(fiber.StatusInternalServerError, "Message queue not available")
 	}
+	githubClient, ok := c.Locals("githubClient").(utils.GithubClient)
+	if !ok {
+		return fiber.NewError(fiber.StatusInternalServerError, "Github client not available")
+	}
 
 	ctx := context.Background()
-	review, err := rc.reviewsService.CreateReview(tx, ctx, messageQueue, repoID, prID, req.Name, userID)
+	review, err := rc.reviewsService.CreateReview(tx, ctx, messageQueue, githubClient, repoID, prID, req.Name, userID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Could not create review",
