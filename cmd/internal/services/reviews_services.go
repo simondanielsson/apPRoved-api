@@ -139,6 +139,9 @@ func (rs *ReviewsService) RefreshPullRequests(ctx context.Context, tx *gorm.DB, 
 	// find PRs that are no longer open
 	var closedPRs []*models.PullRequest
 	for _, existingPR := range existingPRs {
+		if existingPR.State == constants.PRStateClosed {
+			continue
+		}
 		found := false
 		for _, pr := range currentOpenPRs {
 			if pr.Number == existingPR.Number {
