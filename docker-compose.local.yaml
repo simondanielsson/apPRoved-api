@@ -1,0 +1,43 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: approved-db
+    ports:
+      - "5434:5432"
+    env_file:
+      - .env.db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U approved"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: approved-mq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+  rabbitmqdata:
+
+networks:
+  app-network:
+    driver: bridge

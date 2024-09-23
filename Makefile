@@ -19,7 +19,7 @@ run-dev: docs build
 
 build-image: docs
 	echo "Building ${IMAGE_NAME}:${IMAGE_TAG} image...";
-	docker image build -t ${IMAGE_NAME}:${IMAGE_TAG} .;
+	docker build -f arm.Dockerfile -t ${IMAGE_NAME}:${IMAGE_TAG} .;
 	echo "Image ${IMAGE_NAME}:${IMAGE_TAG} built.";
 
 deploy:

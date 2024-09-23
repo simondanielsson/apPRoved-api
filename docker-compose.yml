@@ -7,7 +7,7 @@ services:
     environment:
       - APP_ENV=production
     env_file:
-      - .env.production
+      - .env.development.docker
     depends_on:
       postgres:
         condition: service_healthy
@@ -17,8 +17,6 @@ services:
       - "8090:8090"
     networks:
       - app-network
-    volumes:
-      - ./credentials/key.json:/app/credentials/key.json
 
   postgres:
     image: postgres:16
@@ -65,8 +63,6 @@ services:
         condition: service_healthy
     networks:
       - app-network
-    volumes:
-      - ./credentials/key.json:/app/credentials/key.json
 
   frontend:
     image: approved-frontend:latest
@@ -79,7 +75,7 @@ services:
     environment:
       APP_ENV: production
     env_file:
-      - .env.frontend.production
+      - .env.frontend.docker
     networks:
       - app-network
 
