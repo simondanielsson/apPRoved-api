@@ -97,6 +97,72 @@ func (rs *ReviewsService) GetRepository(tx *gorm.DB, repoID uint) (*responses.Ge
 	return response, nil
 }
 
+func (rs *ReviewsService) RefreshPullRequests(ctx context.Context, tx *gorm.DB, githubClient utils.GithubClient, userID, repoID uint) error {
+	repository, err := rs.reviewsRepository.GetRepository(tx, repoID)
+	if err != nil {
+		return err
+	}
+
+	existingPRs, err := rs.reviewsRepository.GetPullRequests(tx, userID, repoID)
+	if err != nil {
+		return err
+	}
+
+	currentOpenPRs, err := githubClient.ListPullRequests(ctx, repository.Name, repository.Owner, userID)
+	if err != nil {
+		return err
+	}
+
+	// find all new open PRs that were added since last refresh
+	var newPRs []*models.PullRequest
+	for _, pr := range currentOpenPRs {
+		found := false
+		for _, existingPR := range existingPRs {
+			if pr.Number == existingPR.Number {
+				found = true
+				break
+			}
+		}
+		if !found {
+			newPRs = append(newPRs, &models.PullRequest{
+				RepositoryID: repoID,
+				Number:       pr.Number,
+				Title:        pr.Title,
+				URL:          pr.URL,
+				State:        pr.State,
+				LastCommit:   pr.LastCommit,
+			})
+		}
+	}
+	log.Printf("Found %d new PRs\n", len(newPRs))
+
+	// find PRs that are no longer open
+	var closedPRs []*models.PullRequest
+	for _, existingPR := range existingPRs {
+		found := false
+		for _, pr := range currentOpenPRs {
+			if pr.Number == existingPR.Number {
+				found = true
+				break
+			}
+		}
+		if !found {
+			existingPR.State = constants.PRStateClosed
+			closedPRs = append(closedPRs, existingPR)
+		}
+	}
+	log.Printf("Found %d now closed PRs\n", len(closedPRs))
+
+	if err := rs.reviewsRepository.CreatePullRequests(tx, newPRs); err != nil {
+		return err
+	}
+	if err := rs.reviewsRepository.UpdatePullRequestStatuses(tx, closedPRs); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (rs *ReviewsService) findPullRequests(ctx context.Context, githubClient utils.GithubClient, repo *models.Repository, userID uint) ([]*models.PullRequest, error) {
 	fetched_prs, err := githubClient.ListPullRequests(ctx, repo.Name, repo.Owner, userID)
 	if err != nil {

@@ -14,7 +14,7 @@ func RegisterReviewsRoutes(apiV1 fiber.Router, reviewsController *controllers.Re
 	router.Get(":repositoryID", reviewsController.GetRepository)
 
 	router.Get("/:repositoryID/pull-requests", reviewsController.GetPullRequests)
-	router.Put("/:repositoryID/pull-requests/:prID", reviewsController.UpdatePullRequest)
+	router.Put("/:repositoryID/pull-requests", reviewsController.RefreshPullRequests)
 	router.Get("/:repositoryID/pull-requests/:prID", reviewsController.GetPullRequest)
 
 	router.Get("/:repositoryID/pull-requests/:prID/reviews", reviewsController.GetReviews)

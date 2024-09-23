@@ -7,3 +7,8 @@ const (
 	StatusProcessing ReviewStatus = "processing"
 	StatusAvailable  ReviewStatus = "available"
 )
+
+const (
+	PRStateClosed = "closed"
+	PRStateOpen   = "open"
+)

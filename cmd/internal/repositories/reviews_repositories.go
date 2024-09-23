@@ -81,6 +81,19 @@ func (r *ReviewsRepository) GetPullRequest(tx *gorm.DB, prID uint) (*models.Pull
 	return &pr, nil
 }
 
+func (r *ReviewsRepository) UpdatePullRequestStatuses(tx *gorm.DB, prs []*models.PullRequest) error {
+	if len(prs) == 0 {
+		return nil
+	}
+	for _, pr := range prs {
+		if err := tx.Model(&models.PullRequest{}).Where("id = ?", pr.ID).Updates(models.PullRequest{State: pr.State}).Error; err != nil {
+			return fmt.Errorf("failed to update pull requests: %v", err)
+		}
+	}
+
+	return nil
+}
+
 // GetReviews returns all reviews for a pull request
 func (r *ReviewsRepository) GetReviews(tx *gorm.DB, repoID, prID uint) ([]*models.Review, error) {
 	var reviews []*models.Review

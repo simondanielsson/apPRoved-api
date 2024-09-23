@@ -150,8 +150,42 @@ func (rc *ReviewsController) GetPullRequests(c *fiber.Ctx) error {
 	})
 }
 
-func (rc *ReviewsController) UpdatePullRequest(c *fiber.Ctx) error {
-	return c.SendString("UpdatePullRequest")
+// generate swagger docs
+// @Summary Update pull request
+// @Description Update a pull request
+// @Tags reviews
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param        repositoryID  path  string  true  "Repository ID"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /api/v1/repositories/{repositoryID}/pull-requests [put]
+func (rc *ReviewsController) RefreshPullRequests(c *fiber.Ctx) error {
+	repoID, err := utils.ReadUintPathParam(c, "repositoryID")
+	if err != nil {
+		return err
+	}
+	userID := middlewares.GetUserID(c)
+
+	githubClient, ok := c.Locals("githubClient").(utils.GithubClient)
+	if !ok {
+		return fiber.NewError(fiber.StatusInternalServerError, "Github client not available")
+	}
+
+	tx := db.GetDBTransaction(c)
+	ctx := context.Background()
+	if err := rc.reviewsService.RefreshPullRequests(ctx, tx, githubClient, userID, repoID); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Could not update pull requests",
+			"error":   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Successfully refreshed pull requests",
+	})
 }
 
 // @Summary Get pull request
