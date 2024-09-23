@@ -5,7 +5,7 @@ services:
     image: approved-api:latest
     container_name: approved-api
     environment:
-      - APP_ENV=production
+      - APP_ENV=development.docker
     env_file:
       - .env.development.docker
     depends_on:
@@ -73,7 +73,7 @@ services:
       api:
         condition: service_started
     environment:
-      APP_ENV: production
+      APP_ENV: docker
     env_file:
       - .env.frontend.docker
     networks:
