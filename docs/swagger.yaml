@@ -272,6 +272,39 @@ paths:
       summary: Get pull requests
       tags:
       - reviews
+    put:
+      consumes:
+      - application/json
+      description: Update a pull request
+      parameters:
+      - description: Repository ID
+        in: path
+        name: repositoryID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update pull request
+      tags:
+      - reviews
   /api/v1/repositories/{repositoryID}/pull-requests/{prID}:
     get:
       consumes:

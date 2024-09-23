@@ -82,16 +82,16 @@ func (c *GithubClient) ListPullRequests(ctx context.Context, repoName, repoOwner
 
 	var prs []*GithubPullRequest
 	for {
-		fetched_prs, resp, err := c.client.PullRequests.List(ctx, repoOwner, repoName, opts)
+		fetchedPRs, resp, err := c.client.PullRequests.List(ctx, repoOwner, repoName, opts)
 		if err != nil {
 			if r, _ := err.(*github.ErrorResponse); r.Response.StatusCode == 404 {
-				fetched_prs = []*github.PullRequest{}
+				fetchedPRs = []*github.PullRequest{}
 			} else {
 				return nil, err
 			}
 		}
 
-		for _, pr := range fetched_prs {
+		for _, pr := range fetchedPRs {
 			number := *pr.Number
 			if number < 0 {
 				number = 0
