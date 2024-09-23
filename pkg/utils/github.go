@@ -59,10 +59,11 @@ func (c *GithubClient) connect(ctx context.Context) error {
 		log.Fatal("Failed to initialize OAuth2 client")
 	}
 
-	c.client = github.NewClient(tc)
-	if c.client == nil {
+	client := github.NewClient(tc)
+	if client == nil {
 		log.Fatalf("Failed to initialize GitHub client")
 	}
+	c.client = client
 
 	log.Printf("Initialized GitHub client")
 	return nil
@@ -75,7 +76,7 @@ func (c *GithubClient) ListPullRequests(ctx context.Context, repoName, repoOwner
 	log.Printf("Fetching PRs for %s/%s", repoOwner, repoName)
 	// fetch PR's by page
 	opts := &github.PullRequestListOptions{
-		State:       "all",
+		State:       "open",
 		ListOptions: github.ListOptions{Page: 0, PerPage: 30},
 	}
 
