@@ -22,7 +22,7 @@ services:
     image: postgres:16
     container_name: approved-db
     ports:
-      - "5434:5432"
+      - "5429:5432"
     env_file:
       - .env.db
     healthcheck:
@@ -39,8 +39,8 @@ services:
     image: rabbitmq:management
     container_name: approved-mq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5673:5672"
+      - "15673:15672"
     healthcheck:
       test: [ "CMD", "rabbitmqctl", "status" ]
       interval: 30s
@@ -68,7 +68,7 @@ services:
     image: approved-frontend:latest
     container_name: approved-frontend
     ports:
-      - "3000:3000"
+      - "3002:3000"
     depends_on:
       api:
         condition: service_started
