@@ -11,6 +11,7 @@ import (
 	"github.com/simondanielsson/apPRoved/cmd/config"
 	"github.com/simondanielsson/apPRoved/cmd/internal/db"
 	"github.com/simondanielsson/apPRoved/pkg/utils"
+	"github.com/simondanielsson/apPRoved/pkg/utils/git"
 	"github.com/simondanielsson/apPRoved/pkg/utils/mq"
 )
 
@@ -39,12 +40,16 @@ func main() {
 	}
 	defer messageQueue.Close()
 
-	githubClient, err := utils.NewGithubClient(context.Background())
+	clientType := os.Getenv("GIT_CLIENT")
+	if clientType == "" {
+		log.Fatal("GIT_CLIENT environment variable is not set")
+	}
+	gitClient, err := git.NewGitClient(context.Background(), clientType)
 	if err != nil {
-		log.Fatalf("could not create github client: %v", err)
+		log.Fatalf("could not create git client: %v", err)
 	}
 
-	server := api.NewAPIServer(config.Server, db, messageQueue, githubClient)
+	server := api.NewAPIServer(config.Server, db, messageQueue, &gitClient)
 
 	gracefulShutdown(server, &messageQueue)
 	server.Run()

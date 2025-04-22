@@ -1,4 +1,4 @@
-package utils
+package git
 
 import (
 	"context"
@@ -8,24 +8,9 @@ import (
 	"sync"
 
 	"github.com/google/go-github/v64/github"
+	"github.com/simondanielsson/apPRoved/pkg/utils"
 	"golang.org/x/oauth2"
 )
-
-type GithubPullRequest struct {
-	Number     uint
-	Title      string
-	URL        string
-	State      string
-	LastCommit string
-}
-
-type GithubPullRequestFileChanges struct {
-	Filename  string `json:"filename"`
-	Patch     string `json:"patch"`
-	Additions int    `json:"additions"`
-	Deletions int    `json:"deletions"`
-	Changes   int    `json:"changes"`
-}
 
 type GithubClient struct {
 	client *github.Client
@@ -69,7 +54,7 @@ func (c *GithubClient) connect(ctx context.Context) error {
 	return nil
 }
 
-func (c *GithubClient) ListPullRequests(ctx context.Context, repoName, repoOwner string, userID uint) ([]*GithubPullRequest, error) {
+func (c *GithubClient) ListPullRequests(ctx context.Context, repoName, repoOwner string, userID uint) ([]*GitPullRequest, error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -80,7 +65,7 @@ func (c *GithubClient) ListPullRequests(ctx context.Context, repoName, repoOwner
 		ListOptions: github.ListOptions{Page: 0, PerPage: 30},
 	}
 
-	var prs []*GithubPullRequest
+	var prs []*GitPullRequest
 	for {
 		fetchedPRs, resp, err := c.client.PullRequests.List(ctx, repoOwner, repoName, opts)
 		if err != nil {
@@ -103,7 +88,7 @@ func (c *GithubClient) ListPullRequests(ctx context.Context, repoName, repoOwner
 				return nil, err
 			}
 
-			prs = append(prs, &GithubPullRequest{
+			prs = append(prs, &GitPullRequest{
 				Number:     uint_number,
 				Title:      *pr.Title,
 				URL:        *pr.URL,
@@ -125,7 +110,7 @@ func (c *GithubClient) ListPullRequests(ctx context.Context, repoName, repoOwner
 	return prs, nil
 }
 
-func (c *GithubClient) FetchFileDiffs(ctx context.Context, repoName, repoOwner string, prNumber uint, userID uint) ([]*GithubPullRequestFileChanges, error) {
+func (c *GithubClient) FetchFileDiffs(ctx context.Context, repoName, repoOwner string, prNumber uint, userID uint) ([]*GitPullRequestFileChanges, error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -134,11 +119,11 @@ func (c *GithubClient) FetchFileDiffs(ctx context.Context, repoName, repoOwner s
 		return nil, err
 	}
 
-	var fc []*GithubPullRequestFileChanges
+	var fc []*GitPullRequestFileChanges
 	for _, file := range files {
-		diff := &GithubPullRequestFileChanges{
+		diff := &GitPullRequestFileChanges{
 			Filename:  *file.Filename,
-			Patch:     SafeString(file.Patch, "Cannot display patch for binary file"),
+			Patch:     utils.SafeString(file.Patch, "Cannot display patch for binary file"),
 			Additions: *file.Additions,
 			Deletions: *file.Deletions,
 			Changes:   *file.Changes,

@@ -10,6 +10,7 @@ import (
 	"github.com/simondanielsson/apPRoved/cmd/internal/middlewares"
 	"github.com/simondanielsson/apPRoved/cmd/internal/services"
 	"github.com/simondanielsson/apPRoved/pkg/utils"
+	"github.com/simondanielsson/apPRoved/pkg/utils/git"
 	"github.com/simondanielsson/apPRoved/pkg/utils/mq"
 )
 
@@ -69,12 +70,12 @@ func (rc *ReviewsController) RegisterRepository(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Could not parse request body"})
 	}
 
-	githubClient, ok := c.Locals("githubClient").(utils.GithubClient)
+	gitClient, ok := c.Locals("gitClient").(git.GitClient)
 	if !ok {
 		return fiber.NewError(fiber.StatusInternalServerError, "Github client not available")
 	}
 
-	repo, err := rc.reviewsService.RegisterRepository(ctx, tx, githubClient, userID, req.Name, req.Owner, req.URL)
+	repo, err := rc.reviewsService.RegisterRepository(ctx, tx, gitClient, userID, req.Name, req.Owner, req.URL)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not create repository", "error": err.Error()})
 	}
@@ -169,14 +170,14 @@ func (rc *ReviewsController) RefreshPullRequests(c *fiber.Ctx) error {
 	}
 	userID := middlewares.GetUserID(c)
 
-	githubClient, ok := c.Locals("githubClient").(utils.GithubClient)
+	gitClient, ok := c.Locals("gitClient").(git.GitClient)
 	if !ok {
 		return fiber.NewError(fiber.StatusInternalServerError, "Github client not available")
 	}
 
 	tx := db.GetDBTransaction(c)
 	ctx := context.Background()
-	if err := rc.reviewsService.RefreshPullRequests(ctx, tx, githubClient, userID, repoID); err != nil {
+	if err := rc.reviewsService.RefreshPullRequests(ctx, tx, gitClient, userID, repoID); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Could not update pull requests",
 			"error":   err.Error(),
@@ -373,13 +374,13 @@ func (rc *ReviewsController) CreateReview(c *fiber.Ctx) error {
 	if !ok {
 		return fiber.NewError(fiber.StatusInternalServerError, "Message queue not available")
 	}
-	githubClient, ok := c.Locals("githubClient").(utils.GithubClient)
+	gitClient, ok := c.Locals("gitClient").(git.GitClient)
 	if !ok {
 		return fiber.NewError(fiber.StatusInternalServerError, "Github client not available")
 	}
 
 	ctx := context.Background()
-	review, err := rc.reviewsService.CreateReview(tx, ctx, messageQueue, githubClient, repoID, prID, req.Name, userID)
+	review, err := rc.reviewsService.CreateReview(tx, ctx, messageQueue, gitClient, repoID, prID, req.Name, userID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Could not create review",

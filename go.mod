@@ -10,10 +10,10 @@ require (
 	github.com/gofiber/swagger v1.1.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/go-github/v64 v64.0.0
+	github.com/hexops/gotextdiff v1.0.3
 	github.com/joho/godotenv v1.5.1
 	github.com/microsoft/azure-devops-go-api/azuredevops/v7 v7.1.0
 	github.com/rabbitmq/amqp091-go v1.10.0
-	github.com/sergi/go-diff v1.3.1
 	github.com/spf13/viper v1.19.0
 	github.com/swaggo/swag v1.16.3
 	golang.org/x/crypto v0.27.0

@@ -42,7 +42,7 @@ func NewRabbitMQ(cfg interface{}) (*RabbitMQ, error) {
 func (r *RabbitMQ) connect() error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
-	fmt.Println("Initializing RabbitMQ connection...")
+	log.Println("Initializing RabbitMQ connection...")
 
 	if r.connected {
 		return nil
@@ -62,7 +62,7 @@ func (r *RabbitMQ) connect() error {
 	r.channel = channel
 	r.connected = true
 
-	fmt.Println("RabbitMQ connection initialized")
+	log.Println("RabbitMQ connection initialized")
 	return nil
 }
 

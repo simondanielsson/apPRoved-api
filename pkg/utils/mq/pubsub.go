@@ -36,7 +36,7 @@ func NewPubSub(cfg interface{}) (*PubSub, error) {
 			return nil, fmt.Errorf("error initializing PubSub: %v", err)
 		}
 	}
-	fmt.Println("Connected to all declared topics")
+	log.Println("Connected to all declared topics")
 
 	return ps, nil
 }

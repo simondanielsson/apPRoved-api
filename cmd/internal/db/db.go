@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
 
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
 	"github.com/gofiber/fiber/v2"
@@ -30,8 +31,7 @@ func NewDB(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 	default:
 		log.Fatalf("unsupported driver name: %s", cfg.DriverName)
 	}
-
-	log.Printf("connecting to database %s:%s\n", cfg.Host, cfg.DBName)
+	log.Printf("connecting to database %s:%s:%s\n", cfg.Host, strconv.Itoa(cfg.Port), cfg.DBName)
 
 	db, err := gorm.Open(postgres.New(postgres.Config{
 		DriverName: cfg.DriverName,

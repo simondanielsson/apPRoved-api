@@ -10,16 +10,17 @@ import (
 	"github.com/simondanielsson/apPRoved/cmd/internal/middlewares"
 	"github.com/simondanielsson/apPRoved/cmd/internal/routes"
 	"github.com/simondanielsson/apPRoved/pkg/utils"
+	"github.com/simondanielsson/apPRoved/pkg/utils/git"
 	"github.com/simondanielsson/apPRoved/pkg/utils/mq"
 	"gorm.io/gorm"
 )
 
 type APIServer struct {
-	config       *config.ServerConfig
-	db           *gorm.DB
-	app          *fiber.App
-	queue        mq.MessageQueue
-	githubClient *utils.GithubClient
+	config    *config.ServerConfig
+	db        *gorm.DB
+	app       *fiber.App
+	queue     mq.MessageQueue
+	gitClient *git.GitClient
 }
 
 func (s *APIServer) Run() {
@@ -49,17 +50,17 @@ func (s *APIServer) Shutdown() error {
 	return nil
 }
 
-func NewAPIServer(cfg *config.ServerConfig, db *gorm.DB, queue mq.MessageQueue, githubClient *utils.GithubClient) *APIServer {
+func NewAPIServer(cfg *config.ServerConfig, db *gorm.DB, queue mq.MessageQueue, gitClient *git.GitClient) *APIServer {
 	server := &APIServer{
-		config:       cfg,
-		db:           db,
-		app:          fiber.New(),
-		queue:        queue,
-		githubClient: githubClient,
+		config:    cfg,
+		db:        db,
+		app:       fiber.New(),
+		queue:     queue,
+		gitClient: gitClient,
 	}
 
 	utils.ConfigureSwagger(server.app)
-	middlewares.SetupMiddlewares(server.app, queue, githubClient)
+	middlewares.SetupMiddlewares(server.app, queue, gitClient)
 	server.setupRoutes()
 
 	return server

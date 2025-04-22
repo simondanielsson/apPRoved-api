@@ -4,7 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/simondanielsson/apPRoved/pkg/utils"
+	"github.com/simondanielsson/apPRoved/pkg/utils/git"
 	"github.com/simondanielsson/apPRoved/pkg/utils/mq"
 	"gorm.io/gorm"
 )
@@ -14,7 +14,7 @@ type OptionalMiddlewares struct {
 	Transaction func(*fiber.Ctx) error
 }
 
-func SetupMiddlewares(app *fiber.App, queue mq.MessageQueue, githubClient *utils.GithubClient) {
+func SetupMiddlewares(app *fiber.App, queue mq.MessageQueue, gitClient *git.GitClient) {
 	app.Use(cors.New())
 
 	app.Use(logger.New(logger.Config{
@@ -25,7 +25,7 @@ func SetupMiddlewares(app *fiber.App, queue mq.MessageQueue, githubClient *utils
 
 	app.Use(func(c *fiber.Ctx) error {
 		c.Locals("messageQueue", queue)
-		c.Locals("githubClient", *githubClient)
+		c.Locals("gitClient", *gitClient)
 		return c.Next()
 	})
 }

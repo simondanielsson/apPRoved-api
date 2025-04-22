@@ -52,7 +52,6 @@ func (r *ReviewsRepository) CreatePullRequests(tx *gorm.DB, prs []*models.PullRe
 	if len(prs) == 0 {
 		return nil
 	}
-	log.Printf("Inserting pull requests %v", prs)
 	if err := tx.CreateInBatches(prs, 30).Error; err != nil {
 		return fmt.Errorf("failed to insert pull requests: %v", err)
 	}
