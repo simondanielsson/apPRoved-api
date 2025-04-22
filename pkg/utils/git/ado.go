@@ -224,11 +224,10 @@ func (c *AzureDevopsClient) FetchFileDiffs(ctx context.Context, repoName, repoOw
 				fileChange.Patch = createPatch(path, path, oldContent, newContent)
 			}
 		default:
-			log.Printf("Unknown change type: %s", *change.ChangeType)
+			log.Printf("Unknown change type for %s: %s", path, *change.ChangeType)
 			continue
 		}
 
-		fmt.Printf("File: %s, ChangeType: %s, Patch:\n%s\n", path, *change.ChangeType, fileChange.Patch)
 		fileChanges = append(fileChanges, &fileChange)
 	}
 	return fileChanges, nil
