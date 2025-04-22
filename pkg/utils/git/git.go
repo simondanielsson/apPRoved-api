@@ -15,11 +15,12 @@ type GitPullRequest struct {
 }
 
 type GitPullRequestFileChanges struct {
-	Filename  string `json:"filename"`
-	Patch     string `json:"patch"`
-	Additions int    `json:"additions"`
-	Deletions int    `json:"deletions"`
-	Changes   int    `json:"changes"`
+	Filename    string `json:"filename"`
+	Patch       string `json:"patch"`
+	Additions   int    `json:"additions"`
+	Deletions   int    `json:"deletions"`
+	Changes     int    `json:"changes"`
+	FileContent string `json:"file_content"`
 }
 
 type GitClient interface {

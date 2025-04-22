@@ -162,14 +162,6 @@ func (c *AzureDevopsClient) FetchFileDiffs(ctx context.Context, repoName, repoOw
 			continue
 		}
 
-		// Azure does not track number of lines added, changed, or deleted so we default to the zero-value for these fields
-		fileChange := GitPullRequestFileChanges{
-			Filename:  path,
-			Additions: 0,
-			Deletions: 0,
-			Changes:   0,
-		}
-
 		targetBranch := cleanBranchName(*pr.TargetRefName)
 		sourceBranch := cleanBranchName(*pr.SourceRefName)
 		getNewContentArgs := adogit.GetItemArgs{
@@ -189,13 +181,21 @@ func (c *AzureDevopsClient) FetchFileDiffs(ctx context.Context, repoName, repoOw
 			continue
 		}
 
+		// Azure does not track number of lines added, changed, or deleted so we default to the zero-value for these fields
+		fileChange := GitPullRequestFileChanges{
+			Filename:    path,
+			Additions:   0,
+			Deletions:   0,
+			Changes:     0,
+			FileContent: newContent,
+		}
+
 		switch *change.ChangeType {
 		case adogit.VersionControlChangeTypeValues.Add:
 			if newContentType == "base64Encoded" {
 				fileChange.Patch = createPatch(path, path, "", placeholderBinaryContent)
 			} else {
-				patch := createPatch(path, path, "", newContent)
-				fileChange.Patch = fmt.Sprintf("Added file content: %s", patch)
+				fileChange.Patch = createPatch(path, path, "", newContent)
 			}
 
 		case adogit.VersionControlChangeTypeValues.Edit, adogit.VersionControlChangeTypeValues.Delete:
@@ -221,8 +221,7 @@ func (c *AzureDevopsClient) FetchFileDiffs(ctx context.Context, repoName, repoOw
 				if oldContentType == "base64Encoded" {
 					oldContent = placeholderBinaryContent
 				}
-				patch := createPatch(path, path, oldContent, newContent)
-				fileChange.Patch = fmt.Sprintf("New content of file: %s\nDiff of file: %s", newContent, patch)
+				fileChange.Patch = createPatch(path, path, oldContent, newContent)
 			}
 		default:
 			log.Printf("Unknown change type: %s", *change.ChangeType)
