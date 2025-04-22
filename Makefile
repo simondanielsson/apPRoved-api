@@ -1,4 +1,4 @@
-.PHONY: build build-linux run build-image deploy test docs
+.PHONY: build build-linux run build-image-linux build-image-arm deploy test docs
 IMAGE_NAME := approved-api
 IMAGE_TAG := latest
 
@@ -17,7 +17,12 @@ run: build
 run-dev: docs build
 	@go run cmd/main.go
 
-build-image: docs
+build-image-linux: build-linux docs
+	echo "Building ${IMAGE_NAME}:${IMAGE_TAG} image...";
+	docker build -f Dockerfile -t ${IMAGE_NAME}:${IMAGE_TAG} .;
+	echo "Image ${IMAGE_NAME}:${IMAGE_TAG} built.";
+
+build-image-arm: build docs
 	echo "Building ${IMAGE_NAME}:${IMAGE_TAG} image...";
 	docker build -f arm.Dockerfile -t ${IMAGE_NAME}:${IMAGE_TAG} .;
 	echo "Image ${IMAGE_NAME}:${IMAGE_TAG} built.";
